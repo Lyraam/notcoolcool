@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Massive Liquid Splash Machine</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #050b14;
+            font-family: sans-serif;
+            overflow: hidden;
+            transition: background-color 0.1s ease;
+            overscroll-behavior: none;
+            position: fixed;
+            width: 100%;
+            filter: contrast(25);
+        }
+
+        body.shake {
+            animation: screen-shake 0.1s ease-in-out;
+        }
+
+        .satisfying-btn {
+            padding: 25px 50px;
+            font-size: 28px;
+            font-weight: 900;
+            color: white;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 50% 50% 40% 40% / 60% 60% 30% 30%;
+            background: linear-gradient(45deg, #ff0055, #9900ff);
+            transition: transform 0.03s ease, filter 0.1s ease;
+            filter: blur(5px);
+        }
+
+        .satisfying-btn:active {
+            transform: scale(0.8);
+            border-radius: 40% 40% 50% 50% / 30% 30% 60% 60%;
+        }
+
+        @keyframes screen-shake {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-3px, 3px); }
+            50% { transform: translate(3px, -3px); }
+            75% { transform: translate(-3px, -3px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .liquid-drop {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            z-index: 5;
+            transition: transform 0.05s linear;
+            filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+
+    <button class="satisfying-btn" onclick="handleClick(event)">RAGE!</button>
+
+    <script>
+        document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSplatterSound() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            
+            const baseFreq = rageMeter > 50 ? 80 : 120;
+            osc.frequency.setValueAtTime(baseFreq + Math.random() * 50, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.1);
+            
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        let rageMeter = 0;
+        let currentHue = 0;
+        let drops = [];
+        const gravity = 1.0;
+
+        function updatePhysics() {
+            drops = drops.filter(drop => {
+                drop.x += drop.vx;
+                drop.y += drop.vy;
+                drop.vy += gravity;
+                drop.size *= 0.96;
+
+                const el = drop.element;
+                el.style.transform = `translate(${drop.x}px, ${drop.y}px)`;
+                el.style.width = `${drop.size
