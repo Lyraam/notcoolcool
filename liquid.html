@@ -59,7 +59,7 @@
 
         const { Engine, Render, Runner, Bodies, Composite, Body, Vector } = Matter;
 
-        const engine = Engine.create({ gravity: { y: 1.2 } });
+        const engine = Engine.create({ gravity: { y: 1.4 } });
         const world = engine.world;
 
         const canvasZone = document.getElementById('canvasZone');
@@ -111,23 +111,21 @@
 
         let wallOptions = { 
             isStatic: true, 
-            render: { fillStyle: '#ffffff' } 
+            render: { fillStyle: 'rgba(255, 255, 255, 0.25)' } 
         };
         
         let bottom = Bodies.rectangle(cx, cy + btnH/2 - thickness/2, btnW, thickness, wallOptions);
-        let topWall = Bodies.rectangle(cx, cy - btnH/2 + thickness/2, btnW, thickness, wallOptions);
         let left = Bodies.rectangle(cx - btnW/2 + thickness/2, cy, thickness, btnH, wallOptions);
         let right = Bodies.rectangle(cx + btnW/2 - thickness/2, cy, thickness, btnH, wallOptions);
 
-        let buttonGroup = [bottom, topWall, left, right];
+        let buttonGroup = [bottom, left, right];
         Composite.add(world, buttonGroup);
 
-        const ground = Bodies.rectangle(cx, window.innerHeight + 100, window.innerWidth * 2, 100, { isStatic: true, render: { visible: false } });
-        Composite.add(world, ground);
+        const liquidParticles = [];
 
         function spawnLiquid() {
             const color = `hsl(${currentHue}, 100%, 60%)`;
-            const rows = 7;
+            const rows = 8;
             const cols = 14;
             const radius = 7;
 
@@ -137,16 +135,36 @@
                     const py = cy + (btnH/3) - (i * radius * 1.6);
                     
                     const drop = Bodies.circle(px, py, radius, {
-                        restitution: 0.1,
-                        friction: 0.002,
-                        density: 0.03,
+                        restitution: 0.4,
+                        friction: 0.0,
+                        frictionAir: 0.005,
+                        density: 0.04,
                         render: { fillStyle: color }
                     });
+                    liquidParticles.push(drop);
                     Composite.add(world, drop);
                 }
             }
         }
         spawnLiquid();
+
+        function checkBounds() {
+            const buffer = 50;
+            liquidParticles.forEach(drop => {
+                if (drop.position.y > window.innerHeight + buffer || 
+                    drop.position.x < -buffer || 
+                    drop.position.x > window.innerWidth + buffer) {
+                    
+                    const rx = cx + (Math.random() - 0.5) * (btnW - 40);
+                    const ry = cy + (btnH / 4);
+                    
+                    Body.setPosition(drop, Vector.create(rx, ry));
+                    Body.setVelocity(drop, Vector.create(0, 0));
+                }
+            });
+            requestAnimationFrame(checkBounds);
+        }
+        checkBounds();
 
         window.addEventListener('pointerdown', function(e) {
             const btnX1 = cx - btnW/2;
@@ -163,23 +181,22 @@
                 currentHue = (currentHue + 40) % 360;
                 const newColor = `hsl(${currentHue}, 100%, 60%)`;
 
-                const forceMagnitude = 0.12;
-                const bodies = Composite.allBodies(world);
-
-                bodies.forEach(body => {
-                    if (!body.isStatic) {
-                        body.render.fillStyle = newColor;
-                        
-                        const angle = Math.random() * Math.PI * 2;
-                        const force = Vector.create(Math.cos(angle) * forceMagnitude, Math.sin(angle) * forceMagnitude - 0.08);
-                        Body.applyForce(body, body.position, force);
-                    }
+                liquidParticles.forEach(body => {
+                    body.render.fillStyle = newColor;
+                    
+                    const distanceX = body.position.x - cx;
+                    const distanceY = body.position.y - (cy + btnH/4);
+                    
+                    const forceX = (distanceX / btnW) * 0.08 + (Math.random() - 0.5) * 0.05;
+                    const forceY = -0.16 - Math.random() * 0.12;
+                    
+                    Body.applyForce(body, body.position, Vector.create(forceX, forceY));
                 });
 
                 buttonGroup.forEach(part => {
-                    Body.translate(part, Vector.create(0, 6));
+                    Body.translate(part, Vector.create(0, 8));
                     setTimeout(() => {
-                        Body.translate(part, Vector.create(0, -6));
+                        Body.translate(part, Vector.create(0, -8));
                     }, 50);
                 });
             }
@@ -196,10 +213,8 @@
             render.options.height = window.innerHeight;
 
             Body.setPosition(bottom, Vector.create(cx, cy + btnH/2 - thickness/2));
-            Body.setPosition(topWall, Vector.create(cx, cy - btnH/2 + thickness/2));
             Body.setPosition(left, Vector.create(cx - btnW/2 + thickness/2, cy));
             Body.setPosition(right, Vector.create(cx + btnW/2 - thickness/2, cy));
-            Body.setPosition(ground, Vector.create(cx, window.innerHeight + 100));
         });
     </script>
 
