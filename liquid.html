@@ -29,6 +29,7 @@
             left: 0;
             width: 100%;
             height: 100%;
+            filter: blur(8px) contrast(20);
         }
 
         .btn-label {
@@ -42,14 +43,15 @@
             letter-spacing: 2px;
             pointer-events: none;
             z-index: 20;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            font-family: sans-serif;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
 <body>
 
-    <div class="btn-label">RAGE!</div>
+    <div class="btn-label" id="label">RAGE!</div>
     <div id="canvasZone"></div>
 
     <script>
@@ -57,11 +59,13 @@
 
         const { Engine, Render, Runner, Bodies, Composite, Body, Vector } = Matter;
 
-        const engine = Engine.create({ gravity: { y: 1 } });
+        const engine = Engine.create({ gravity: { y: 1.2 } });
         const world = engine.world;
 
+        const canvasZone = document.getElementById('canvasZone');
+        
         const render = Render.create({
-            element: document.getElementById('canvasZone'),
+            element: canvasZone,
             engine: engine,
             options: {
                 width: window.innerWidth,
@@ -80,7 +84,7 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(120 + Math.random() * 60, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(110 + Math.random() * 50, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.15);
             gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
@@ -91,42 +95,51 @@
         }
 
         let currentHue = 0;
-        const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2;
+        let cx = window.innerWidth / 2;
+        let cy = window.innerHeight / 2;
 
         const btnW = 240;
         const btnH = 90;
-        const thickness = 10;
+        const thickness = 16;
 
-        const wallOptions = { isStatic: true, render: { fillStyle: 'rgba(255,255,255,0.15)' } };
+        function updateLabelPosition() {
+            const label = document.getElementById('label');
+            label.style.left = `${cx}px`;
+            label.style.top = `${cy}px`;
+        }
+        updateLabelPosition();
+
+        let wallOptions = { 
+            isStatic: true, 
+            render: { fillStyle: '#ffffff' } 
+        };
         
-        const bottom = Bodies.rectangle(cx, cy + btnH/2, btnW, thickness, wallOptions);
-        const topWall = Bodies.rectangle(cx, cy - btnH/2, btnW, thickness, wallOptions);
-        const left = Bodies.rectangle(cx - btnW/2, cy, thickness, btnH, wallOptions);
-        const right = Bodies.rectangle(cx + btnW/2, cy, thickness, btnH, wallOptions);
+        let bottom = Bodies.rectangle(cx, cy + btnH/2 - thickness/2, btnW, thickness, wallOptions);
+        let topWall = Bodies.rectangle(cx, cy - btnH/2 + thickness/2, btnW, thickness, wallOptions);
+        let left = Bodies.rectangle(cx - btnW/2 + thickness/2, cy, thickness, btnH, wallOptions);
+        let right = Bodies.rectangle(cx + btnW/2 - thickness/2, cy, thickness, btnH, wallOptions);
 
-        const buttonGroup = [bottom, topWall, left, right];
+        let buttonGroup = [bottom, topWall, left, right];
         Composite.add(world, buttonGroup);
 
-        const ground = Bodies.rectangle(cx, window.innerHeight + 50, window.innerWidth * 2, 100, { isStatic: true, render: { visible: false } });
+        const ground = Bodies.rectangle(cx, window.innerHeight + 100, window.innerWidth * 2, 100, { isStatic: true, render: { visible: false } });
         Composite.add(world, ground);
 
         function spawnLiquid() {
-            const color = `hsl(${currentHue}, 100%, 55%)`;
-            const rows = 6;
-            const cols = 12;
-            const radius = 6;
+            const color = `hsl(${currentHue}, 100%, 60%)`;
+            const rows = 7;
+            const cols = 14;
+            const radius = 7;
 
             for (let i = 0; i < rows; i++) {
                 for (let j = 0; j < cols; j++) {
-                    const px = cx - (cols * radius) + (j * radius * 2) + (Math.random() - 0.5) * 2;
-                    const py = cy + (btnH/4) - (i * radius * 2);
+                    const px = cx - (cols * radius * 0.8) + (j * radius * 1.6) + (Math.random() - 0.5) * 2;
+                    const py = cy + (btnH/3) - (i * radius * 1.6);
                     
                     const drop = Bodies.circle(px, py, radius, {
-                        restitution: 0.2,
-                        friction: 0.005,
-                        density: 0.02,
-                        slop: 0,
+                        restitution: 0.1,
+                        friction: 0.002,
+                        density: 0.03,
                         render: { fillStyle: color }
                     });
                     Composite.add(world, drop);
@@ -148,9 +161,9 @@
                 if (navigator.vibrate) navigator.vibrate(25);
 
                 currentHue = (currentHue + 40) % 360;
-                const newColor = `hsl(${currentHue}, 100%, 55%)`;
+                const newColor = `hsl(${currentHue}, 100%, 60%)`;
 
-                const forceMagnitude = 0.08;
+                const forceMagnitude = 0.12;
                 const bodies = Composite.allBodies(world);
 
                 bodies.forEach(body => {
@@ -158,26 +171,35 @@
                         body.render.fillStyle = newColor;
                         
                         const angle = Math.random() * Math.PI * 2;
-                        const force = Vector.create(Math.cos(angle) * forceMagnitude, Math.sin(angle) * forceMagnitude - 0.05);
+                        const force = Vector.create(Math.cos(angle) * forceMagnitude, Math.sin(angle) * forceMagnitude - 0.08);
                         Body.applyForce(body, body.position, force);
                     }
                 });
 
                 buttonGroup.forEach(part => {
-                    Body.translate(part, Vector.create(0, 8));
+                    Body.translate(part, Vector.create(0, 6));
                     setTimeout(() => {
-                        Body.translate(part, Vector.create(0, -8));
+                        Body.translate(part, Vector.create(0, -6));
                     }, 50);
                 });
             }
         });
 
         window.addEventListener('resize', () => {
+            cx = window.innerWidth / 2;
+            cy = window.innerHeight / 2;
+            updateLabelPosition();
+
             render.bounds.max.x = window.innerWidth;
             render.bounds.max.y = window.innerHeight;
             render.options.width = window.innerWidth;
             render.options.height = window.innerHeight;
-            Render.setPixelRatio(render, window.devicePixelRatio);
+
+            Body.setPosition(bottom, Vector.create(cx, cy + btnH/2 - thickness/2));
+            Body.setPosition(topWall, Vector.create(cx, cy - btnH/2 + thickness/2));
+            Body.setPosition(left, Vector.create(cx - btnW/2 + thickness/2, cy));
+            Body.setPosition(right, Vector.create(cx + btnW/2 - thickness/2, cy));
+            Body.setPosition(ground, Vector.create(cx, window.innerHeight + 100));
         });
     </script>
 
