@@ -30,7 +30,27 @@
             animation: screen-shake 0.1s ease-in-out;
         }
 
-        #liquidCanvas {
+        .canvas-container {
+            position: relative;
+            width: 240px;
+            height: 90px;
+            z-index: 10;
+        }
+
+        #btnCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            border-radius: 45px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.05s ease;
+        }
+
+        #btnCanvas:active {
+            transform: scale(0.9);
+        }
+
+        #splashCanvas {
             position: absolute;
             top: 0;
             left: 0;
@@ -39,39 +59,6 @@
             pointer-events: none;
             z-index: 5;
             filter: blur(8px) contrast(25);
-        }
-
-        .btn-container {
-            position: relative;
-            width: 200px;
-            height: 80px;
-            z-index: 10;
-        }
-
-        .satisfying-btn {
-            width: 100%;
-            height: 100%;
-            font-size: 28px;
-            font-weight: 900;
-            color: white;
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border-radius: 40px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            transition: transform 0.05s ease;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 12;
-        }
-
-        .satisfying-btn:active {
-            transform: scale(0.9);
         }
 
         @keyframes screen-shake {
@@ -85,24 +72,27 @@
 </head>
 <body>
 
-    <canvas id="liquidCanvas"></canvas>
-    <div class="btn-container" id="btnContainer">
-        <button class="satisfying-btn" onclick="handleClick(event)">RAGE!</button>
+    <canvas id="splashCanvas"></canvas>
+    <div class="canvas-container">
+        <canvas id="btnCanvas" onclick="handleClick(event)"></canvas>
     </div>
 
     <script>
         document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
-        const canvas = document.getElementById('liquidCanvas');
-        const ctx = canvas.getContext('2d');
-        const btnContainer = document.getElementById('btnContainer');
+        const splashCanvas = document.getElementById('splashCanvas');
+        const sCtx = splashCanvas.getContext('2d');
+        const btnCanvas = document.getElementById('btnCanvas');
+        const bCtx = btnCanvas.getContext('2d');
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        function resize() {
+            splashCanvas.width = window.innerWidth;
+            splashCanvas.height = window.innerHeight;
+            btnCanvas.width = 240;
+            btnCanvas.height = 90;
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        window.addEventListener('resize', resize);
+        resize();
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSplatterSound() {
@@ -110,7 +100,7 @@
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
             
-            const baseFreq = rageMeter > 50 ? 110 : 160;
+            const baseFreq = rageMeter > 50 ? 100 : 150;
             osc.frequency.setValueAtTime(baseFreq + Math.random() * 60, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.15);
             
@@ -127,52 +117,82 @@
         let currentHue = 0;
         let drops = [];
         const gravity = 0.6;
-        let time = 0;
-        let waveIntensity = 5;
+
+        let liquidLevel = 0.5;
+        let targetLevel = 0.5;
+        let wavePhase = 0;
+        let sloshAngle = 0;
+        let sloshVelocity = 0;
+        const sloshK = 0.15;
+        const sloshDamping = 0.85;
 
         function updatePhysics() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            time += 0.1 + (rageMeter / 100) * 0.2;
-            
-            waveIntensity = 4 + (rageMeter / 100) * 25;
+            sCtx.clearRect(0, 0, splashCanvas.width, splashCanvas.height);
+            bCtx.clearRect(0, 0, btnCanvas.width, btnCanvas.height);
 
-            const rect = btnContainer.getBoundingClientRect();
             const color = `hsl(${currentHue}, 100%, 55%)`;
+
+            bCtx.save();
+            bCtx.beginPath();
+            bCtx.roundRect(0, 0, btnCanvas.width, btnCanvas.height, 45);
+            bCtx.clip();
+
+            bCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            bCtx.fillRect(0, 0, btnCanvas.width, btnCanvas.height);
+
+            bCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            bCtx.lineWidth = 4;
+            bCtx.strokeRect(0, 0, btnCanvas.width, btnCanvas.height);
+
+            bCtx.fillStyle = color;
+
+            sloshVelocity += (0 - sloshAngle) * sloshK;
+            sloshVelocity *= sloshDamping;
+            sloshAngle += sloshVelocity;
+
+            wavePhase += 0.15 + (rageMeter / 100) * 0.2;
+            targetLevel = 0.5 + (rageMeter / 100) * 0.4;
+            liquidLevel += (targetLevel - liquidLevel) * 0.1;
+
+            const baseHeight = btnCanvas.height * (1 - liquidLevel);
+            const amp1 = 3 + (rageMeter / 100) * 15;
+            const amp2 = 2 + (rageMeter / 100) * 8;
+
+            bCtx.beginPath();
+            bCtx.moveTo(0, btnCanvas.height);
             
-            ctx.fillStyle = color;
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.roundRect(rect.left, rect.top, rect.width, rect.height, 36);
-            ctx.clip();
-
-            ctx.beginPath();
-            const fillLevel = rect.top + rect.height * 0.4 - (rageMeter / 100) * 30;
-            ctx.moveTo(rect.left, rect.bottom);
-            ctx.lineTo(rect.left, fillLevel);
-
-            for (let x = rect.left; x <= rect.right; x++) {
-                const y = fillLevel + Math.sin((x * 0.05) + time) * waveIntensity;
-                ctx.lineTo(x, y);
+            for (let x = 0; x <= btnCanvas.width; x++) {
+                const sloshOffset = (x - btnCanvas.width / 2) * Math.sin(sloshAngle);
+                const wave1 = Math.sin((x * 0.04) + wavePhase) * amp1;
+                const wave2 = Math.cos((x * 0.09) - wavePhase * 1.3) * amp2;
+                const y = baseHeight + sloshOffset + wave1 + wave2;
+                bCtx.lineTo(x, y);
             }
 
-            ctx.lineTo(rect.right, rect.bottom);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
+            bCtx.lineTo(btnCanvas.width, btnCanvas.height);
+            bCtx.closePath();
+            bCtx.fill();
+
+            bCtx.fillStyle = 'white';
+            bCtx.font = '900 28px sans-serif';
+            bCtx.textAlign = 'center';
+            bCtx.textBaseline = 'middle';
+            bCtx.fillText('RAGE!', btnCanvas.width / 2, btnCanvas.height / 2);
+            bCtx.restore();
 
             if (drops.length > 0) {
+                sCtx.fillStyle = color;
                 drops = drops.filter(drop => {
                     drop.x += drop.vx;
                     drop.y += drop.vy;
                     drop.vy += gravity;
                     drop.size *= 0.96;
 
-                    ctx.beginPath();
-                    ctx.arc(drop.x, drop.y, drop.size, 0, Math.PI * 2);
-                    ctx.fill();
+                    sCtx.beginPath();
+                    sCtx.arc(drop.x, drop.y, drop.size, 0, Math.PI * 2);
+                    sCtx.fill();
 
-                    if (drop.size < 6 || drop.y > canvas.height) {
+                    if (drop.size < 6 || drop.y > splashCanvas.height) {
                         return false;
                     }
                     return true;
@@ -194,14 +214,14 @@
             void document.body.offsetWidth;
             document.body.classList.add('shake');
 
-            rageMeter = Math.min(rageMeter + 15, 100);
-            
+            rageMeter = Math.min(rageMeter + 14, 100);
             currentHue = (currentHue + 35) % 360; 
 
-            const numDrops = Math.floor(20 + (rageMeter / 100) * 100); 
-            
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+            sloshVelocity += (Math.random() > 0.5 ? 1 : -1) * 0.4;
+
+            const numDrops = Math.floor(30 + (rageMeter / 100) * 110); 
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
 
             for (let i = 0; i < numDrops; i++) {
                 const size = (Math.random() * 18 + 12) * (1 + rageMeter / 100); 
