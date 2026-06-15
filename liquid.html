@@ -42,7 +42,7 @@
             height: 100%;
             cursor: pointer;
             border-radius: 45px;
-            box-shadow: inset 0 4px 12px rgba(255,255,255,0.15), 0 20px 40px rgba(0,0,0,0.6);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
             transition: transform 0.05s ease;
         }
 
@@ -126,13 +126,28 @@
         const sloshK = 0.18;
         const sloshDamping = 0.82;
 
+        function drawRoundedClip(ctx, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(r, 0);
+            ctx.lineTo(w - r, 0);
+            ctx.arcTo(w, 0, w, h, r);
+            ctx.lineTo(w, h - r);
+            ctx.arcTo(w, h, 0, h, r);
+            ctx.lineTo(r, h);
+            ctx.arcTo(0, h, 0, 0, r);
+            ctx.lineTo(0, r);
+            ctx.arcTo(0, 0, w, 0, r);
+            ctx.closePath();
+        }
+
         function updatePhysics() {
             sCtx.clearRect(0, 0, splashCanvas.width, splashCanvas.height);
             bCtx.clearRect(0, 0, btnCanvas.width, btnCanvas.height);
 
+            const color = `hsl(${currentHue}, 100%, 55%)`;
+
             bCtx.save();
-            bCtx.beginPath();
-            bCtx.roundRect(0, 0, btnCanvas.width, btnCanvas.height, 45);
+            drawRoundedClip(bCtx, btnCanvas.width, btnCanvas.height, 45);
             bCtx.clip();
 
             let bgGrad = bCtx.createLinearGradient(0, 0, 0, btnCanvas.height);
@@ -228,16 +243,3 @@
             }
 
             requestAnimationFrame(updatePhysics);
-        }
-        updatePhysics();
-
-        function handleClick(e) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            playSplatterSound();
-            const vibeLevel = rageMeter > 50 ? [50, 15, 50] : 25;
-            if (navigator.vibrate) navigator.vibrate(vibeLevel);
-
-            document.body.classList.remove('shake');
-            void document.body.offsetWidth;
-            document.body.classList.add('shake');
