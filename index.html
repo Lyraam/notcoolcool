@@ -5,18 +5,18 @@
     <title>Massive Satisfying Machine</title>
     <style>
         body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #050b14;
-    font-family: sans-serif;
-    overflow: hidden;
-    transition: background-color 0.1s ease;
-    overscroll-behavior: none;
-    position: fixed;
-    width: 100%;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #050b14;
+            font-family: sans-serif;
+            overflow: hidden;
+            transition: background-color 0.1s ease;
+            overscroll-behavior: none;
+            position: fixed;
+            width: 100%;
         }
 
         body.shake {
@@ -41,7 +41,7 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            touch-action: none;
             text-transform: uppercase;
             letter-spacing: 2px;
         }
@@ -114,6 +114,10 @@
     <button class="satisfying-btn" onclick="handleClick(event)">BOOM!</button>
 
     <script>
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playExplosionSound() {
