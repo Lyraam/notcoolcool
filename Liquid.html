@@ -18,14 +18,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #050b14;
+            background-color: #1e293b;
             font-family: sans-serif;
             overflow: hidden;
             transition: background-color 0.1s ease;
             overscroll-behavior: none;
             position: fixed;
             width: 100%;
-            filter: contrast(25);
+            filter: contrast(30);
         }
 
         body.shake {
@@ -33,7 +33,7 @@
         }
 
         .satisfying-btn {
-            padding: 25px 50px;
+            padding: 30px 60px;
             font-size: 28px;
             font-weight: 900;
             color: white;
@@ -43,22 +43,21 @@
             z-index: 10;
             text-transform: uppercase;
             letter-spacing: 2px;
-            border-radius: 50% 50% 40% 40% / 60% 60% 30% 30%;
-            background: linear-gradient(45deg, #ff0055, #9900ff);
-            transition: transform 0.03s ease, filter 0.1s ease;
-            filter: blur(5px);
+            border-radius: 50%;
+            background: #ff0055;
+            transition: transform 0.03s ease;
+            filter: blur(4px);
         }
 
         .satisfying-btn:active {
-            transform: scale(0.8);
-            border-radius: 40% 40% 50% 50% / 30% 30% 60% 60%;
+            transform: scale(0.85);
         }
 
         @keyframes screen-shake {
             0% { transform: translate(0, 0); }
-            25% { transform: translate(-3px, 3px); }
-            50% { transform: translate(3px, -3px); }
-            75% { transform: translate(-3px, -3px); }
+            25% { transform: translate(-4px, 4px); }
+            50% { transform: translate(4px, -4px); }
+            75% { transform: translate(-4px, -4px); }
             100% { transform: translate(0, 0); }
         }
 
@@ -67,8 +66,7 @@
             pointer-events: none;
             border-radius: 50%;
             z-index: 5;
-            transition: transform 0.05s linear;
-            filter: blur(5px);
+            filter: blur(4px);
         }
     </style>
 </head>
@@ -85,31 +83,101 @@
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
             
-            const baseFreq = rageMeter > 50 ? 80 : 120;
-            osc.frequency.setValueAtTime(baseFreq + Math.random() * 50, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.1);
+            const baseFreq = rageMeter > 50 ? 100 : 150;
+            osc.frequency.setValueAtTime(baseFreq + Math.random() * 80, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.12);
             
             gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
             
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.1);
+            osc.stop(audioCtx.currentTime + 0.12);
         }
 
         let rageMeter = 0;
         let currentHue = 0;
         let drops = [];
-        const gravity = 1.0;
+        const gravity = 0.8;
 
         function updatePhysics() {
             drops = drops.filter(drop => {
                 drop.x += drop.vx;
                 drop.y += drop.vy;
                 drop.vy += gravity;
-                drop.size *= 0.96;
+                drop.size *= 0.97;
 
                 const el = drop.element;
                 el.style.transform = `translate(${drop.x}px, ${drop.y}px)`;
-                el.style.width = `${drop.size
+                el.style.width = `${drop.size}px`;
+                el.style.height = `${drop.size}px`;
+
+                if (drop.size < 4 || drop.y > window.innerHeight) {
+                    el.remove();
+                    return false;
+                }
+                return true;
+            });
+            requestAnimationFrame(updatePhysics);
+        }
+        updatePhysics();
+
+        function handleClick(e) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            playSplatterSound();
+            const vibeLevel = rageMeter > 50 ? [60, 20, 60] : 30;
+            if (navigator.vibrate) navigator.vibrate(vibeLevel);
+
+            document.body.classList.remove('shake');
+            void document.body.offsetWidth;
+            document.body.classList.add('shake');
+
+            rageMeter = Math.min(rageMeter + 10, 100);
+            
+            currentHue = (currentHue + 35) % 360; 
+            const color = `hsl(${currentHue}, 100%, 55%)`;
+            
+            const btn = e.target;
+            btn.style.backgroundColor = color;
+
+            const numDrops = Math.floor(40 + (rageMeter / 100) * 160); 
+
+            const rect = btn.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < numDrops; i++) {
+                const el = document.createElement('div');
+                el.classList.add('liquid-drop');
+                el.style.backgroundColor = color;
+                
+                const size = (Math.random() * 25 + 15) * (1 + rageMeter / 100); 
+                el.style.width = `${size}px`;
+                el.style.height = `${size}px`;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const power = (Math.random() * 15 + 8) * (1 + (rageMeter / 100) * 1.2); 
+                const vx = Math.cos(angle) * power;
+                const vy = Math.sin(angle) * power - 10;
+
+                drops.push({
+                    element: el,
+                    x: centerX - size / 2,
+                    y: centerY - size / 2,
+                    vx: vx,
+                    vy: vy,
+                    size: size
+                });
+                document.body.appendChild(el);
+            }
+        }
+
+        setInterval(() => {
+            rageMeter = Math.max(rageMeter - 6, 0);
+        }, 200);
+    </script>
+
+</body>
+</html>
