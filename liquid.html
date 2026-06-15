@@ -42,7 +42,7 @@
             height: 100%;
             cursor: pointer;
             border-radius: 45px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: inset 0 4px 12px rgba(255,255,255,0.15), 0 20px 40px rgba(0,0,0,0.6);
             transition: transform 0.05s ease;
         }
 
@@ -123,65 +123,93 @@
         let wavePhase = 0;
         let sloshAngle = 0;
         let sloshVelocity = 0;
-        const sloshK = 0.15;
-        const sloshDamping = 0.85;
+        const sloshK = 0.18;
+        const sloshDamping = 0.82;
 
         function updatePhysics() {
             sCtx.clearRect(0, 0, splashCanvas.width, splashCanvas.height);
             bCtx.clearRect(0, 0, btnCanvas.width, btnCanvas.height);
-
-            const color = `hsl(${currentHue}, 100%, 55%)`;
 
             bCtx.save();
             bCtx.beginPath();
             bCtx.roundRect(0, 0, btnCanvas.width, btnCanvas.height, 45);
             bCtx.clip();
 
-            bCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            let bgGrad = bCtx.createLinearGradient(0, 0, 0, btnCanvas.height);
+            bgGrad.addColorStop(0, '#111827');
+            bgGrad.addColorStop(1, '#030712');
+            bCtx.fillStyle = bgGrad;
             bCtx.fillRect(0, 0, btnCanvas.width, btnCanvas.height);
-
-            bCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-            bCtx.lineWidth = 4;
-            bCtx.strokeRect(0, 0, btnCanvas.width, btnCanvas.height);
-
-            bCtx.fillStyle = color;
 
             sloshVelocity += (0 - sloshAngle) * sloshK;
             sloshVelocity *= sloshDamping;
             sloshAngle += sloshVelocity;
 
-            wavePhase += 0.15 + (rageMeter / 100) * 0.2;
-            targetLevel = 0.5 + (rageMeter / 100) * 0.4;
+            wavePhase += 0.12 + (rageMeter / 100) * 0.25;
+            targetLevel = 0.45 + (rageMeter / 100) * 0.45;
             liquidLevel += (targetLevel - liquidLevel) * 0.1;
 
             const baseHeight = btnCanvas.height * (1 - liquidLevel);
-            const amp1 = 3 + (rageMeter / 100) * 15;
-            const amp2 = 2 + (rageMeter / 100) * 8;
+            const ampBase = 3 + (rageMeter / 100) * 16;
 
+            bCtx.fillStyle = `hsl(${currentHue}, 90%, 25%)`;
             bCtx.beginPath();
             bCtx.moveTo(0, btnCanvas.height);
-            
             for (let x = 0; x <= btnCanvas.width; x++) {
-                const sloshOffset = (x - btnCanvas.width / 2) * Math.sin(sloshAngle);
-                const wave1 = Math.sin((x * 0.04) + wavePhase) * amp1;
-                const wave2 = Math.cos((x * 0.09) - wavePhase * 1.3) * amp2;
-                const y = baseHeight + sloshOffset + wave1 + wave2;
+                const sloshOffset = (x - btnCanvas.width / 2) * Math.sin(sloshAngle * 0.9);
+                const w1 = Math.sin((x * 0.035) - wavePhase * 0.8) * (ampBase * 0.8);
+                const w2 = Math.cos((x * 0.07) + wavePhase * 1.1) * (ampBase * 0.4);
+                const y = baseHeight + sloshOffset + w1 + w2 + 4;
                 bCtx.lineTo(x, y);
             }
-
             bCtx.lineTo(btnCanvas.width, btnCanvas.height);
             bCtx.closePath();
             bCtx.fill();
 
-            bCtx.fillStyle = 'white';
+            let liqGrad = bCtx.createLinearGradient(0, baseHeight - 20, 0, btnCanvas.height);
+            liqGrad.addColorStop(0, `hsl(${currentHue}, 100%, 65%)`);
+            liqGrad.addColorStop(0.3, `hsl(${currentHue}, 100%, 50%)`);
+            liqGrad.addColorStop(1, `hsl(${currentHue}, 100%, 20%)`);
+            bCtx.fillStyle = liqGrad;
+
+            bCtx.beginPath();
+            bCtx.moveTo(0, btnCanvas.height);
+            for (let x = 0; x <= btnCanvas.width; x++) {
+                const sloshOffset = (x - btnCanvas.width / 2) * Math.sin(sloshAngle);
+                const w1 = Math.sin((x * 0.045) + wavePhase) * ampBase;
+                const w2 = Math.cos((x * 0.09) - wavePhase * 1.4) * (ampBase * 0.5);
+                const w3 = Math.sin((x * 0.25) + wavePhase * 3.0) * (1 + (rageMeter / 100) * 4);
+                const y = baseHeight + sloshOffset + w1 + w2 + w3;
+                bCtx.lineTo(x, y);
+            }
+            bCtx.lineTo(btnCanvas.width, btnCanvas.height);
+            bCtx.closePath();
+            bCtx.fill();
+
+            let glassGrad = bCtx.createLinearGradient(0, 0, 0, btnCanvas.height);
+            glassGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+            glassGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.02)');
+            glassGrad.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+            bCtx.fillStyle = glassGrad;
+            bCtx.fillRect(0, 0, btnCanvas.width, btnCanvas.height);
+
+            bCtx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+            bCtx.lineWidth = 4;
+            bCtx.strokeRect(0, 0, btnCanvas.width, btnCanvas.height);
+
+            bCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             bCtx.font = '900 28px sans-serif';
             bCtx.textAlign = 'center';
             bCtx.textBaseline = 'middle';
+            bCtx.fillText('RAGE!', btnCanvas.width / 2 + 1, btnCanvas.height / 2 + 2);
+
+            bCtx.fillStyle = 'white';
             bCtx.fillText('RAGE!', btnCanvas.width / 2, btnCanvas.height / 2);
             bCtx.restore();
 
             if (drops.length > 0) {
-                sCtx.fillStyle = color;
+                const splashColor = `hsl(${currentHue}, 100%, 55%)`;
+                sCtx.fillStyle = splashColor;
                 drops = drops.filter(drop => {
                     drop.x += drop.vx;
                     drop.y += drop.vy;
@@ -213,37 +241,3 @@
             document.body.classList.remove('shake');
             void document.body.offsetWidth;
             document.body.classList.add('shake');
-
-            rageMeter = Math.min(rageMeter + 14, 100);
-            currentHue = (currentHue + 35) % 360; 
-
-            sloshVelocity += (Math.random() > 0.5 ? 1 : -1) * 0.4;
-
-            const numDrops = Math.floor(30 + (rageMeter / 100) * 110); 
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-
-            for (let i = 0; i < numDrops; i++) {
-                const size = (Math.random() * 18 + 12) * (1 + rageMeter / 100); 
-                const angle = Math.random() * Math.PI * 2;
-                const power = (Math.random() * 14 + 7) * (1 + (rageMeter / 100) * 1.3); 
-                const vx = Math.cos(angle) * power;
-                const vy = Math.sin(angle) * power - 6;
-
-                drops.push({
-                    x: centerX,
-                    y: centerY,
-                    vx: vx,
-                    vy: vy,
-                    size: size
-                });
-            }
-        }
-
-        setInterval(() => {
-            rageMeter = Math.max(rageMeter - 6, 0);
-        }, 200);
-    </script>
-
-</body>
-</html>
