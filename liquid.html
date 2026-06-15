@@ -59,7 +59,7 @@
 
         const { Engine, Render, Runner, Bodies, Composite, Body, Vector } = Matter;
 
-        const engine = Engine.create({ gravity: { y: 1.5 } });
+        const engine = Engine.create({ gravity: { y: 1.6 } });
         const world = engine.world;
 
         const canvasZone = document.getElementById('canvasZone');
@@ -84,7 +84,7 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(90 + Math.random() * 60, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(85 + Math.random() * 60, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.15);
             gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
@@ -101,7 +101,7 @@
         const btnW = 240;
         const btnH = 90;
         const thickness = 16;
-        const maxGlobalParticles = 350;
+        const maxGlobalParticles = 450; 
 
         function updateLabelPosition() {
             const label = document.getElementById('label');
@@ -125,7 +125,7 @@
         function createWaterDrop(x, y, hue) {
             const radius = 6.5;
             return Bodies.circle(x, y, radius, {
-                restitution: 0.4,
+                restitution: 0.45,
                 friction: 0.0,
                 frictionAir: 0.001,
                 density: 0.06,
@@ -135,14 +135,15 @@
 
         function fillButtonWithLiquid(count) {
             for (let i = 0; i < count; i++) {
-                const rx = cx + (Math.random() - 0.5) * (btnW - 40);
-                const ry = cy + (btnH / 4) - (Math.random() * 30);
+                const rx = cx + (Math.random() - 0.5) * (btnW - 35);
+                const ry = cy + (btnH / 4) - (Math.random() * 35);
                 Composite.add(world, createWaterDrop(rx, ry, currentHue));
             }
         }
-        fillButtonWithLiquid(100);
+        
+        fillButtonWithLiquid(140);
 
-        function maintainLiquid() {
+        setInterval(() => {
             const allBodies = Composite.allBodies(world);
             const particles = allBodies.filter(b => !b.isStatic);
             
@@ -154,12 +155,17 @@
                 }
             });
 
-            if (particles.length < 60) {
-                fillButtonWithLiquid(40);
+            const insideCount = particles.filter(body => {
+                return (body.position.x > cx - btnW/2 && 
+                        body.position.x < cx + btnW/2 && 
+                        body.position.y > cy - btnH/2 && 
+                        body.position.y < cy + btnH/2);
+            }).length;
+
+            if (insideCount < 110 && particles.length < maxGlobalParticles) {
+                fillButtonWithLiquid(30);
             }
-            requestAnimationFrame(maintainLiquid);
-        }
-        maintainLiquid();
+        }, 16); 
 
         window.addEventListener('pointerdown', function(e) {
             const btnX1 = cx - btnW/2;
@@ -182,20 +188,20 @@
                 particles.forEach(body => {
                     body.render.fillStyle = newColor;
                     const distanceX = body.position.x - cx;
-                    const forceX = (distanceX / btnW) * 0.15 + (Math.random() - 0.5) * 0.1;
-                    const forceY = -0.35 - Math.random() * 0.22;
+                    const forceX = (distanceX / btnW) * 0.18 + (Math.random() - 0.5) * 0.12;
+                    const forceY = -0.38 - Math.random() * 0.25; 
                     Body.applyForce(body, body.position, Vector.create(forceX, forceY));
                 });
 
                 if (particles.length < maxGlobalParticles) {
-                    const spawnCount = 40; 
+                    const spawnCount = 55; 
                     for (let i = 0; i < spawnCount; i++) {
-                        const rx = cx + (Math.random() - 0.5) * (btnW - 50);
+                        const rx = cx + (Math.random() - 0.5) * (btnW - 40);
                         const ry = cy + (btnH / 6);
                         const newDrop = createWaterDrop(rx, ry, currentHue);
                         
-                        const forceX = (Math.random() - 0.5) * 0.25;
-                        const forceY = -0.45 - Math.random() * 0.3; 
+                        const forceX = (Math.random() - 0.5) * 0.35;
+                        const forceY = -0.55 - Math.random() * 0.35; 
                         
                         Composite.add(world, newDrop);
                         Body.applyForce(newDrop, newDrop.position, Vector.create(forceX, forceY));
