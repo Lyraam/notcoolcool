@@ -46,8 +46,8 @@
         canvas.height = height;
 
         let score = 0;
-        let jellyRadius = 45;
-        let targetRadius = 45;
+        let jellyRadius = 50;
+        let targetRadius = 50;
         
         let food = { x: width / 2, y: height / 3, radius: 10, pulse: 0 };
         let mouse = { x: 0, y: 0, isDown: false };
@@ -61,30 +61,30 @@
             }
 
             update() {
-                let vx = (this.x - this.px) * 0.95;
-                let vy = (this.y - this.py) * 0.95;
+                let vx = (this.x - this.px) * 0.97;
+                let vy = (this.y - this.py) * 0.97;
 
                 this.px = this.x;
                 this.py = this.y;
 
                 this.x += vx;
-                this.y += vy + 0.15; 
+                this.y += vy + 0.12; 
 
-                if (this.y > height - 20) {
-                    this.y = height - 20;
-                    this.py = this.y + vy * 0.4;
+                if (this.y > height - 35) {
+                    this.y = height - 35;
+                    this.py = this.y + vy * 0.3;
                 }
-                if (this.y < 20) {
-                    this.y = 20;
-                    this.py = this.y + vy * 0.4;
+                if (this.y < 35) {
+                    this.y = 35;
+                    this.py = this.y + vy * 0.3;
                 }
-                if (this.x > width - 20) {
-                    this.x = width - 20;
-                    this.px = this.x + vx * 0.4;
+                if (this.x > width - 35) {
+                    this.x = width - 35;
+                    this.px = this.x + vx * 0.3;
                 }
-                if (this.x < 20) {
-                    this.x = 20;
-                    this.px = this.x + vx * 0.4;
+                if (this.x < 35) {
+                    this.x = 35;
+                    this.px = this.x + vx * 0.3;
                 }
             }
         }
@@ -102,7 +102,7 @@
                 let dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist === 0) return;
 
-                let diff = (this.length - dist) / dist * 0.4;
+                let diff = (this.length - dist) / dist * 0.22;
                 let offsetX = dx * diff;
                 let offsetY = dy * diff;
 
@@ -116,6 +116,7 @@
         let points = [];
         let springs = [];
         let centerPoint = new JellyPoint(width / 2, height / 2);
+        const numPoints = 14;
 
         function initJelly() {
             points = [];
@@ -126,7 +127,6 @@
             centerPoint.px = width / 2;
             centerPoint.py = height / 2;
 
-            let numPoints = 10;
             for (let i = 0; i < numPoints; i++) {
                 let angle = (i / numPoints) * Math.PI * 2;
                 let rx = centerPoint.x + Math.cos(angle) * jellyRadius;
@@ -136,42 +136,57 @@
 
             for (let i = 0; i < numPoints; i++) {
                 let next = (i + 1) % numPoints;
-                springs.push(new JellySpring(points[i], points[next], jellyRadius * 0.64));
+                springs.push(new JellySpring(points[i], points[next], jellyRadius * 0.45));
                 springs.push(new JellySpring(points[i], centerPoint, jellyRadius));
                 
-                let cross = (i + 5) % numPoints;
-                if (i < 5) {
+                let cross = (i + Math.floor(numPoints / 2)) % numPoints;
+                if (i < numPoints / 2) {
                     springs.push(new JellySpring(points[i], points[cross], jellyRadius * 2));
                 }
             }
         }
 
         function spawnFood() {
-            food.x = 40 + Math.random() * (width - 80);
-            food.y = 80 + Math.random() * (height - 160);
+            food.x = 60 + Math.random() * (width - 120);
+            food.y = 100 + Math.random() * (height - 200);
         }
 
         function updateGame() {
-            jellyRadius += (targetRadius - jellyRadius) * 0.1;
+            jellyRadius += (targetRadius - jellyRadius) * 0.08;
+            
             springs.forEach(s => {
-                if (s.length === targetRadius) return; 
-                if (s.p2 === centerPoint) s.length = jellyRadius;
+                if (s.p2 === centerPoint) {
+                    s.length = jellyRadius;
+                } else if (s.length > jellyRadius * 1.5) {
+                    s.length = jellyRadius * 2;
+                } else {
+                    s.length = jellyRadius * 0.45;
+                }
             });
 
             centerPoint.update();
             points.forEach(p => p.update());
 
             if (mouse.isDown) {
-                let dx = mouse.x - centerPoint.x;
-                let dy = mouse.y - centerPoint.y;
-                let dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist > 5) {
-                    centerPoint.x += (dx / dist) * 2.5;
-                    centerPoint.y += (dy / dist) * 2.5;
+                points.forEach(p => {
+                    let mdx = mouse.x - p.x;
+                    let mdy = mouse.y - p.y;
+                    let mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+                    if (mdist > 5) {
+                        p.x += (mdx / mdist) * 1.4;
+                        p.y += (mdy / mdist) * 1.4;
+                    }
+                });
+                let cmdx = mouse.x - centerPoint.x;
+                let cmdy = mouse.y - centerPoint.y;
+                let cmdist = Math.sqrt(cmdx * cmdx + cmdy * cmdy);
+                if (cmdist > 5) {
+                    centerPoint.x += (cmdx / cmdist) * 1.2;
+                    centerPoint.y += (cmdy / cmdist) * 1.2;
                 }
             }
 
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 6; i++) {
                 springs.forEach(s => s.resolve());
             }
 
@@ -179,14 +194,19 @@
             let fdy = centerPoint.y - food.y;
             let fdist = Math.sqrt(fdx * fdx + fdy * fdy);
             
-            if (fdist < jellyRadius + 10) {
+            if (fdist < jellyRadius + 15) {
                 score++;
-                targetRadius = Math.min(jellyRadius + 4, 110); 
+                targetRadius = Math.min(jellyRadius + 6, 120); 
                 spawnFood();
                 
                 points.forEach(p => {
-                    p.x += (Math.random() - 0.5) * 25;
-                    p.y += (Math.random() - 0.5) * 25;
+                    let pdx = p.x - centerPoint.x;
+                    let pdy = p.y - centerPoint.y;
+                    let pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+                    if (pdist > 0) {
+                        p.x += (pdx / pdist) * 35;
+                        p.y += (pdy / pdist) * 35;
+                    }
                 });
             }
 
@@ -197,8 +217,7 @@
             ctx.clearRect(0, 0, width, height);
 
             let fRadius = food.radius + Math.sin(food.pulse) * 3;
-            
-            ctx.fillStyle = 'rgba(0, 255, 204, 0.3)';
+            ctx.fillStyle = 'rgba(0, 255, 204, 0.25)';
             ctx.beginPath();
             ctx.arc(food.x, food.y, fRadius + 6, 0, Math.PI * 2);
             ctx.fill();
@@ -210,52 +229,11 @@
 
             ctx.fillStyle = 'rgba(255, 0, 128, 0.75)';
             ctx.strokeStyle = '#ff0080';
-            ctx.lineWidth = 3.5;
+            ctx.lineWidth = 4.5;
             ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
-            for (let i = 1; i < points.length; i++) {
-                ctx.lineTo(points[i].x, points[i].y);
-            }
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
 
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 24px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText("SCORE: " + score, 25, 45);
-        }
+            let xc1 = (points[numPoints - 1].x + points[0].x) / 2;
+            let yc1 = (points[numPoints - 1].y + points[0].y) / 2;
+            ctx.moveTo(xc1, yc1);
 
-        function loop() {
-            updateGame();
-            drawGame();
-            requestAnimationFrame(loop);
-        }
-
-        function setMouse(e) {
-            let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-            let clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-            mouse.x = clientX;
-            mouse.y = clientY;
-        }
-
-        window.addEventListener('mousedown', (e) => { mouse.isDown = true; setMouse(e); });
-        window.addEventListener('mousemove', (e) => { if (mouse.isDown) setMouse(e); });
-        window.addEventListener('mouseup', () => mouse.isDown = false);
-
-        window.addEventListener('touchstart', (e) => { mouse.isDown = true; setMouse(e); }, { passive: true });
-        window.addEventListener('touchmove', (e) => { if (mouse.isDown) setMouse(e); }, { passive: true });
-        window.addEventListener('touchend', () => mouse.isDown = false);
-
-        window.addEventListener('resize', () => {
-            width = window.innerWidth; height = window.innerHeight;
-            canvas.width = width; canvas.height = height;
-            initJelly();
-        });
-
-        initJelly();
-        loop();
-    </script>
-
-</body>
-</html>
+            for (let i = 0; i < numPoints; i++)
