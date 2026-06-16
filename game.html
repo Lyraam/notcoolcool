@@ -20,7 +20,7 @@
             overscroll-behavior: none;
             position: fixed;
             width: 100%;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         canvas {
@@ -28,9 +28,41 @@
             width: 100%;
             height: 100%;
         }
+
+        #ui-layer {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .score-label {
+            font-size: 12px;
+            font-weight: 800;
+            color: #ff0080;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        .score-num {
+            font-size: 48px;
+            font-weight: 900;
+            color: #ffffff;
+            line-height: 1;
+            text-shadow: 0 4px 12px rgba(255, 0, 128, 0.3);
+        }
     </style>
 </head>
 <body>
+
+    <div id="ui-layer">
+        <div class="score-label">Energy Absorbed</div>
+        <div id="scoreDisplay" class="score-num">0</div>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -39,6 +71,7 @@
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
 
         let width = window.innerWidth;
         let height = window.innerHeight;
@@ -89,6 +122,26 @@
             layer1.vx = layer1.x - prevX;
             layer1.vy = layer1.y - prevY;
 
+            let dx3 = layer3.x - layer1.x;
+            let dy3 = layer3.y - layer1.y;
+            let dist3 = Math.sqrt(dx3 * dx3 + dy3 * dy3);
+            let maxCoreDistance = baseRadius * 0.4; 
+
+            if (dist3 > maxCoreDistance) {
+                layer3.x = layer1.x + (dx3 / dist3) * maxCoreDistance;
+                layer3.y = layer1.y + (dy3 / dist3) * maxCoreDistance;
+            }
+
+            let dx2 = layer2.x - layer1.x;
+            let dy2 = layer2.y - layer1.y;
+            let dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+            let maxFleshDistance = baseRadius * 0.25;
+
+            if (dist2 > maxFleshDistance) {
+                layer2.x = layer1.x + (dx2 / dist2) * maxFleshDistance;
+                layer2.y = layer1.y + (dy2 / dist2) * maxFleshDistance;
+            }
+
             if (layer1.x < baseRadius) layer1.x = baseRadius;
             if (layer1.x > width - baseRadius) layer1.x = width - baseRadius;
             if (layer1.y < baseRadius) layer1.y = baseRadius;
@@ -100,6 +153,7 @@
             
             if (fdist < baseRadius + 12) {
                 score++;
+                scoreDisplay.textContent = score;
                 targetRadius = Math.min(baseRadius + 5, 110); 
                 bounceTimer = 25; 
                 spawnFood();
@@ -176,11 +230,6 @@
             ctx.beginPath();
             ctx.arc(layer3.x - baseRadius * 0.08, layer3.y - baseRadius * 0.08, baseRadius * 0.09, 0, Math.PI * 2);
             ctx.fill();
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 24px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText("SCORE: " + score, 25, 45);
         }
 
         function loop() {
