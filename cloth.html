@@ -63,7 +63,6 @@
 
         let points = [];
         let constraints = [];
-        let sparks = [];
 
         class Point {
             constructor(x, y) {
@@ -106,6 +105,7 @@
                 this.p1 = p1;
                 this.p2 = p2;
                 this.isTorn = false;
+                this.flashFrames = 0;
             }
 
             resolve() {
@@ -117,7 +117,7 @@
 
                 if (dist > tearDistance) {
                     this.isTorn = true;
-                    createSparkExplosion((this.p1.x + this.p2.x) / 2, (this.p1.y + this.p2.y) / 2);
+                    this.flashFrames = 3;
                     return;
                 }
 
@@ -136,37 +136,9 @@
             }
         }
 
-        class Spark {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 12;
-                this.vy = (Math.random() - 0.5) * 10 - 2;
-                this.alpha = 1;
-                this.size = Math.random() * 3 + 1.5;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += 0.18;
-                this.alpha -= 0.04;
-            }
-            draw() {
-                ctx.fillStyle = "rgba(255, 255, 255, " + this.alpha + ")";
-                ctx.fillRect(this.x, this.y, this.size, this.size);
-            }
-        }
-
-        function createSparkExplosion(x, y) {
-            for (let i = 0; i < 12; i++) {
-                sparks.push(new Spark(x, y));
-            }
-        }
-
         function initCloth() {
             points = [];
             constraints = [];
-            sparks = [];
             let matrix = [];
 
             for (let y = 0; y < numRows; y++) {
@@ -204,4 +176,80 @@
         }
 
         function updatePhysics() {
-            points.forEach(p
+            points.forEach(p => p.update());
+
+            for (let i = 0; i < physicsAccuracy; i++) {
+                constraints.forEach(c => {
+                    c.resolve();
+                    if (mouse.isDown && !c.isTorn && checkCut(c)) {
+                        c.isTorn = true;
+                        c.flashFrames = 3;
+                    }
+                });
+                points.forEach(p => p.resolve());
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(0, 195, 255, 0.8)';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+
+            constraints.forEach(c => {
+                if (!c.isTorn) {
+                    ctx.moveTo(c.p1.x, c.p1.y);
+                    ctx.lineTo(c.p2.x, c.p2.y);
+                }
+            });
+            ctx.stroke();
+
+            constraints.forEach(c => {
+                if (c.isTorn && c.flashFrames > 0) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, ' + (c.flashFrames / 3) + ')';
+                    ctx.lineWidth = 6.0;
+                    ctx.moveTo(c.p1.x, c.p1.y);
+                    ctx.lineTo(c.p2.x, c.p2.y);
+                    ctx.stroke();
+                    c.flashFrames--;
+                }
+            });
+        }
+
+        function loop() {
+            updatePhysics();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function setMouse(e) {
+            let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            let clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            mouse.x = clientX;
+            mouse.y = clientY;
+        }
+
+        window.addEventListener('mousedown', (e) => { mouse.isDown = true; setMouse(e); });
+        window.addEventListener('mousemove', (e) => { if (mouse.isDown) setMouse(e); });
+        window.addEventListener('mouseup', () => mouse.isDown = false);
+
+        window.addEventListener('touchstart', (e) => { mouse.isDown = true; setMouse(e); }, { passive: true });
+        window.addEventListener('touchmove', (e) => { if (mouse.isDown) setMouse(e); }, { passive: true });
+        window.addEventListener('touchend', () => mouse.isDown = false);
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+            startX = (width - (numCols - 1) * restDistance) / 2;
+            startY = height * 0.15;
+            initCloth();
+        });
+
+        initCloth();
+        loop();
+    </script>
+
+</body>
+</html>
