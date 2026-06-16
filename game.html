@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jelly Eat Lab</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: #0b1329;
+            overflow: hidden;
+            overscroll-behavior: none;
+            position: fixed;
+            width: 100%;
+            font-family: sans-serif;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        window.addEventListener('scroll', e => e.preventDefault(), { passive: false });
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        let score = 0;
+        let jellyRadius = 45;
+        let targetRadius = 45;
+        
+        let food = { x: width / 2, y: height / 3, radius: 10, pulse: 0 };
+        let mouse = { x: 0, y: 0, isDown: false };
+
+        class JellyPoint {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.px = x;
+                this.py = y;
+            }
+
+            update() {
+                let vx = (this.x - this.px) * 0.95;
+                let vy = (this.y - this.py) * 0.95;
+
+                this.px = this.x;
+                this.py = this.y;
+
+                this.x += vx;
+                this.y += vy + 0.15; 
+
+                if (this.y > height - 20) {
+                    this.y = height - 20;
+                    this.py = this.y + vy * 0.4;
+                }
+                if (this.y < 20) {
+                    this.y = 20;
+                    this.py = this.y + vy * 0.4;
+                }
+                if (this.x > width - 20) {
+                    this.x = width - 20;
+                    this.px = this.x + vx * 0.4;
+                }
+                if (this.x < 20) {
+                    this.x = 20;
+                    this.px = this.x + vx * 0.4;
+                }
+            }
+        }
+
+        class JellySpring {
+            constructor(p1, p2, length) {
+                this.p1 = p1;
+                this.p2 = p2;
+                this.length = length;
+            }
+
+            resolve() {
+                let dx = this.p2.x - this.p1.x;
+                let dy = this.p2.y - this.p1.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist === 0) return;
+
+                let diff = (this.length - dist) / dist * 0.4;
+                let offsetX = dx * diff;
+                let offsetY = dy * diff;
+
+                this.p1.x -= offsetX;
+                this.p1.y -= offsetY;
+                this.p2.x += offsetX;
+                this.p2.y += offsetY;
+            }
+        }
+
+        let points = [];
+        let springs = [];
+        let centerPoint = new JellyPoint(width / 2, height / 2);
+
+        function initJelly() {
+            points = [];
+            springs = [];
+            
+            centerPoint.x = width / 2;
+            centerPoint.y = height / 2;
+            centerPoint.px = width / 2;
+            centerPoint.py = height / 2;
+
+            let numPoints = 10;
+            for (let i = 0; i < numPoints; i++) {
+                let angle = (i / numPoints) * Math.PI * 2;
+                let rx = centerPoint.x + Math.cos(angle) * jellyRadius;
+                let ry = centerPoint.y + Math.sin(angle) * jellyRadius;
+                points.push(new JellyPoint(rx, ry));
+            }
+
+            for (let i = 0; i < numPoints; i++) {
+                let next = (i + 1) % numPoints;
+                springs.push(new JellySpring(points[i], points[next], jellyRadius * 0.64));
+                springs.push(new JellySpring(points[i], centerPoint, jellyRadius));
+                
+                let cross = (i + 5) % numPoints;
+                if (i < 5) {
+                    springs.push(new JellySpring(points[i], points[cross], jellyRadius * 2));
+                }
+            }
+        }
+
+        function spawnFood() {
+            food.x = 40 + Math.random() * (width - 80);
+            food.y = 80 + Math.random() * (height - 160);
+        }
+
+        function updateGame() {
+            jellyRadius += (targetRadius - jellyRadius) * 0.1;
+            springs.forEach(s => {
+                if (s.length === targetRadius) return; 
+                if (s.p2 === centerPoint) s.length = jellyRadius;
+            });
+
+            centerPoint.update();
+            points.forEach(p => p.update());
+
+            if (mouse.isDown) {
+                let dx = mouse.x - centerPoint.x;
+                let dy = mouse.y - centerPoint.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 5) {
+                    centerPoint.x += (dx / dist) * 2.5;
+                    centerPoint.y += (dy / dist) * 2.5;
+                }
+            }
+
+            for (let i = 0; i < 4; i++) {
+                springs.forEach(s => s.resolve());
+            }
+
+            let fdx = centerPoint.x - food.x;
+            let fdy = centerPoint.y - food.y;
+            let fdist = Math.sqrt(fdx * fdx + fdy * fdy);
+            
+            if (fdist < jellyRadius + 10) {
+                score++;
+                targetRadius = Math.min(jellyRadius + 4, 110); 
+                spawnFood();
+                
+                points.forEach(p => {
+                    p.x += (Math.random() - 0.5) * 25;
+                    p.y += (Math.random() - 0.5) * 25;
+                });
+            }
+
+            food.pulse += 0.07;
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, width, height);
+
+            let fRadius = food.radius + Math.sin(food.pulse) * 3;
+            ctx.fillStyle = '#00ffcc';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#00ffcc';
+            ctx.beginPath();
+            ctx.arc(food.x, food.y, fRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0; 
+
+            ctx.fillStyle = 'rgba(255, 0, 128, 0.75)';
+            ctx.strokeStyle = '#ff0080';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx
