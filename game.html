@@ -61,29 +61,29 @@
             }
 
             update() {
-                let vx = (this.x - this.px) * 0.97;
-                let vy = (this.y - this.py) * 0.97;
+                let vx = (this.x - this.px) * 0.92;
+                let vy = (this.y - this.py) * 0.92;
 
                 this.px = this.x;
                 this.py = this.y;
 
                 this.x += vx;
-                this.y += vy + 0.12; 
+                this.y += vy + 0.15; 
 
-                if (this.y > height - 35) {
-                    this.y = height - 35;
+                if (this.y > height - 30) {
+                    this.y = height - 30;
                     this.py = this.y + vy * 0.3;
                 }
-                if (this.y < 35) {
-                    this.y = 35;
+                if (this.y < 30) {
+                    this.y = 30;
                     this.py = this.y + vy * 0.3;
                 }
-                if (this.x > width - 35) {
-                    this.x = width - 35;
+                if (this.x > width - 30) {
+                    this.x = width - 30;
                     this.px = this.x + vx * 0.3;
                 }
-                if (this.x < 35) {
-                    this.x = 35;
+                if (this.x < 30) {
+                    this.x = 30;
                     this.px = this.x + vx * 0.3;
                 }
             }
@@ -102,7 +102,7 @@
                 let dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist === 0) return;
 
-                let diff = (this.length - dist) / dist * 0.22;
+                let diff = (this.length - dist) / dist * 0.25;
                 let offsetX = dx * diff;
                 let offsetY = dy * diff;
 
@@ -116,7 +116,7 @@
         let points = [];
         let springs = [];
         let centerPoint = new JellyPoint(width / 2, height / 2);
-        const numPoints = 14;
+        const numPoints = 20;
 
         function initJelly() {
             points = [];
@@ -136,18 +136,13 @@
 
             for (let i = 0; i < numPoints; i++) {
                 let next = (i + 1) % numPoints;
-                springs.push(new JellySpring(points[i], points[next], jellyRadius * 0.45));
+                springs.push(new JellySpring(points[i], points[next], jellyRadius * 0.31));
                 springs.push(new JellySpring(points[i], centerPoint, jellyRadius));
-                
-                let cross = (i + Math.floor(numPoints / 2)) % numPoints;
-                if (i < numPoints / 2) {
-                    springs.push(new JellySpring(points[i], points[cross], jellyRadius * 2));
-                }
             }
         }
 
         function spawnFood() {
-            food.x = 60 + Math.random() * (width - 120);
+            food.x = 50 + Math.random() * (width - 100);
             food.y = 100 + Math.random() * (height - 200);
         }
 
@@ -155,13 +150,8 @@
             jellyRadius += (targetRadius - jellyRadius) * 0.08;
             
             springs.forEach(s => {
-                if (s.p2 === centerPoint) {
-                    s.length = jellyRadius;
-                } else if (s.length > jellyRadius * 1.5) {
-                    s.length = jellyRadius * 2;
-                } else {
-                    s.length = jellyRadius * 0.45;
-                }
+                if (s.p2 === centerPoint) s.length = jellyRadius;
+                else s.length = jellyRadius * 0.31;
             });
 
             centerPoint.update();
@@ -173,20 +163,20 @@
                     let mdy = mouse.y - p.y;
                     let mdist = Math.sqrt(mdx * mdx + mdy * mdy);
                     if (mdist > 5) {
-                        p.x += (mdx / mdist) * 1.4;
-                        p.y += (mdy / mdist) * 1.4;
+                        p.x += (mdx / mdist) * 1.2;
+                        p.y += (mdy / mdist) * 1.2;
                     }
                 });
                 let cmdx = mouse.x - centerPoint.x;
                 let cmdy = mouse.y - centerPoint.y;
                 let cmdist = Math.sqrt(cmdx * cmdx + cmdy * cmdy);
                 if (cmdist > 5) {
-                    centerPoint.x += (cmdx / cmdist) * 1.2;
-                    centerPoint.y += (cmdy / cmdist) * 1.2;
+                    centerPoint.x += (cmdx / cmdist) * 1.0;
+                    centerPoint.y += (cmdy / cmdist) * 1.0;
                 }
             }
 
-            for (let i = 0; i < 6; i++) {
+            for (let i = 0; i < 5; i++) {
                 springs.forEach(s => s.resolve());
             }
 
@@ -194,9 +184,9 @@
             let fdy = centerPoint.y - food.y;
             let fdist = Math.sqrt(fdx * fdx + fdy * fdy);
             
-            if (fdist < jellyRadius + 15) {
+            if (fdist < jellyRadius + 12) {
                 score++;
-                targetRadius = Math.min(jellyRadius + 6, 120); 
+                targetRadius = Math.min(jellyRadius + 5, 110); 
                 spawnFood();
                 
                 points.forEach(p => {
@@ -204,8 +194,8 @@
                     let pdy = p.y - centerPoint.y;
                     let pdist = Math.sqrt(pdx * pdx + pdy * pdy);
                     if (pdist > 0) {
-                        p.x += (pdx / pdist) * 35;
-                        p.y += (pdy / pdist) * 35;
+                        p.x += (pdx / pdist) * 20;
+                        p.y += (pdy / pdist) * 20;
                     }
                 });
             }
@@ -229,11 +219,53 @@
 
             ctx.fillStyle = 'rgba(255, 0, 128, 0.75)';
             ctx.strokeStyle = '#ff0080';
-            ctx.lineWidth = 4.5;
+            ctx.lineWidth = 4.0;
             ctx.beginPath();
+            
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
-            let xc1 = (points[numPoints - 1].x + points[0].x) / 2;
-            let yc1 = (points[numPoints - 1].y + points[0].y) / 2;
-            ctx.moveTo(xc1, yc1);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText("SCORE: " + score, 25, 45);
+        }
 
-            for (let i = 0; i < numPoints; i++)
+        function loop() {
+            updateGame();
+            drawGame();
+            requestAnimationFrame(loop);
+        }
+
+        function setMouse(e) {
+            let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            let clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            mouse.x = clientX;
+            mouse.y = clientY;
+        }
+
+        window.addEventListener('mousedown', (e) => { mouse.isDown = true; setMouse(e); });
+        window.addEventListener('mousemove', (e) => { if (mouse.isDown) setMouse(e); });
+        window.addEventListener('mouseup', () => mouse.isDown = false);
+
+        window.addEventListener('touchstart', (e) => { mouse.isDown = true; setMouse(e); }, { passive: true });
+        window.addEventListener('touchmove', (e) => { if (mouse.isDown) setMouse(e); }, { passive: true });
+        window.addEventListener('touchend', () => mouse.isDown = false);
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+            initJelly();
+        });
+
+        initJelly();
+        loop();
+    </script>
+
+</body>
+</html>
