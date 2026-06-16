@@ -2,208 +2,125 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Massive Satisfying Machine</title>
+    <title>My Interactive Projects Hub</title>
     <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #050b14;
-            font-family: sans-serif;
-            overflow: hidden;
-            transition: background-color 0.1s ease;
-            overscroll-behavior: none;
-            position: fixed;
-            width: 100%;
-        }
-
-        body.shake {
-            animation: screen-shake 0.15s ease-in-out;
-        }
-
-        .satisfying-btn {
-            padding: 25px 50px;
-            font-size: 24px;
-            font-weight: 900;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            background: linear-gradient(45deg, #ff0055, #00ffcc, #9900ff, #ff0055);
-            background-size: 300% 300%;
-            box-shadow: 0 0 40px rgba(0, 255, 204, 0.6);
-            transition: transform 0.05s ease;
-            animation: gradient-move 2s linear infinite;
-            position: relative;
-            z-index: 10;
+        * {
+            box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
-            touch-action: none;
-            text-transform: uppercase;
-            letter-spacing: 2px;
         }
 
-        .satisfying-btn:active {
-            transform: scale(0.85);
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-color: #0b1329;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
         }
 
-        @keyframes gradient-move {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            padding: 40px 24px;
+            text-align: center;
         }
 
-        @keyframes screen-shake {
-            0% { transform: translate(0, 0); }
-            20% { transform: translate(-5px, 5px); }
-            40% { transform: translate(5px, -5px); }
-            60% { transform: translate(-5px, -5px); }
-            80% { transform: translate(5px, 5px); }
-            100% { transform: translate(0, 0); }
+        h1 {
+            color: #ffffff;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
         }
 
-        .particle {
-            position: absolute;
-            pointer-events: none;
-            animation: explode 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        p {
+            color: #64748b;
+            font-size: 16px;
+            margin-bottom: 48px;
         }
 
-        @keyframes explode {
-            0% {
-                transform: translate(0, 0) rotate(0deg) scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(0);
-                opacity: 0;
-            }
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .shockwave {
-            position: absolute;
-            border: 4px solid #00ffcc;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 5;
-            animation: wave 0.4s ease-out forwards;
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        @keyframes wave {
-            0% {
-                width: 100px;
-                height: 100px;
-                opacity: 1;
-                transform: scale(0.5);
-                box-shadow: 0 0 20px #00ffcc;
-            }
-            100% {
-                width: 500px;
-                height: 500px;
-                opacity: 0;
-                transform: scale(1.5);
-                box-shadow: 0 0 50px #ff0055;
-            }
+        .menu-item:active {
+            transform: scale(0.97);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .item-info {
+            text-align: left;
+        }
+
+        .item-title {
+            color: #f8fafc;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .item-desc {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .item-arrow {
+            color: #3b82f6;
+            font-size: 20px;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .menu-item:active .item-arrow {
+            transform: translateX(4px);
         }
     </style>
 </head>
 <body>
 
-    <button class="satisfying-btn" onclick="handleClick(event)">BOOM!</button>
+    <div class="container">
+        <h1>PROJECTS</h1>
+        <p>Select an interactive lab to launch</p>
 
-    <script>
-        document.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
+        <div class="menu-list">
+            <a href="project1.html" class="menu-item">
+                <div class="item-info">
+                    <div class="item-title">Project 1</div>
+                    <div class="item-desc">My very first canvas experiment</div>
+                </div>
+                <div class="item-arrow">&rarr;</div>
+            </a>
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        function playExplosionSound() {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150 + Math.random() * 100, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
-            
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
-        }
-
-        function handleClick(e) {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-
-            playExplosionSound();
-
-            if (navigator.vibrate) {
-                navigator.vibrate([40, 20, 40]);
-            }
-
-            document.body.classList.remove('shake');
-            void document.body.offsetWidth; 
-            document.body.classList.add('shake');
-
-            const originalBg = document.body.style.backgroundColor;
-            document.body.style.backgroundColor = '#1e293b';
-            setTimeout(() => { document.body.style.backgroundColor = '#050b14'; }, 50);
-
-            const btn = e.target;
-            const rect = btn.getBoundingClientRect();
-            const x = e.clientX || (rect.left + rect.width / 2);
-            const y = e.clientY || (rect.top + rect.height / 2);
-
-            const wave = document.createElement('div');
-            wave.classList.add('shockwave');
-            wave.style.left = `${x - 50}px`;
-            wave.style.top = `${y - 50}px`;
-            document.body.appendChild(wave);
-            wave.addEventListener('animationend', () => wave.remove());
-
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.classList.add('particle');
-                
-                const size = Math.random() * 20 + 8;
-                particle.style.width = `${size}px`;
-                particle.style.height = `${size}px`;
-                
-                const shapes = ['50%', '0%', '20%'];
-                particle.style.borderRadius = shapes[Math.floor(Math.random() * shapes.length)];
-                
-                const colors = ['#ff0055', '#00ffcc', '#9900ff', '#ffcc00', '#ff5500', '#ffffff'];
-                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                
-                particle.style.left = `${x - size / 2}px`;
-                particle.style.top = `${y - size / 2}px`;
-                
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = Math.random() * 500 + 200;
-                const destinationX = Math.cos(angle) * velocity;
-                const destinationY = Math.sin(angle) * velocity;
-                const rotation = Math.random() * 720 - 360;
-                
-                particle.style.setProperty('--x', `${destinationX}px`);
-                particle.style.setProperty('--y', `${destinationY}px`);
-                particle.style.setProperty('--r', `${rotation}deg`);
-                
-                document.body.appendChild(particle);
-                
-                particle.addEventListener('animationend', () => {
-                    particle.remove();
-                });
-            }
-        }
-    </script>
+            <a href="liquid.html" class="menu-item">
+                <div class="item-info">
+                    <div class="item-title">Liquid Splash Machine</div>
+                    <div class="item-desc">Matter.js physics 2D fluid simulation</div>
+                </div>
+                <div class="item-arrow">&rarr;</div>
+            </a>
+        </div>
+    </div>
 
 </body>
 </html>
