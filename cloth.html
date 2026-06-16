@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Laser Cyber Cloth Lab</title>
+    <title>Cyber Cloth Lab</title>
     <style>
         * {
             box-sizing: border-box;
@@ -15,7 +15,7 @@
         body {
             margin: 0;
             height: 100vh;
-            background-color: #050914;
+            background-color: #0b1329;
             overflow: hidden;
             overscroll-behavior: none;
             position: fixed;
@@ -45,8 +45,8 @@
         canvas.height = height;
 
         const physicsAccuracy = 4;
-        const gravity = 0.16;
-        const tearDistance = 42;
+        const gravity = 0.15;
+        const tearDistance = 40;
 
         let numCols = 30;
         let numRows = 20;
@@ -55,7 +55,7 @@
         if (width < 500) {
             numCols = 22;
             numRows = 16;
-            restDistance = Math.floor((width * 0.82) / (numCols - 1));
+            restDistance = Math.floor((width * 0.8) / (numCols - 1));
         } else {
             restDistance = 14;
         }
@@ -149,33 +149,28 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.vx = (Math.random() - 0.5) * 5;
+                this.vx = (Math.random() - 0.5) * 4;
                 this.vy = (Math.random() - 0.5) * 4 - 1;
                 this.alpha = 1;
                 this.hue = Math.random() > 0.5 ? 340 : 190; 
-                this.size = Math.random() * 2 + 1.5;
+                this.size = Math.random() * 2 + 1;
             }
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vy += 0.12; 
-                this.alpha -= 0.03;
+                this.vy += 0.1; 
+                this.alpha -= 0.04;
             }
             draw() {
-                ctx.save();
-                ctx.globalAlpha = this.alpha;
-                ctx.fillStyle = `hsl(${this.hue}, 100%, 65%)`;
-                ctx.shadowBlur = 6;
-                ctx.shadowColor = `hsl(${this.hue}, 100%, 65%)`;
+                ctx.fillStyle = `hsla(${this.hue}, 100%, 65%, ${this.alpha})`;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.restore();
             }
         }
 
         function createSparkExplosion(x, y) {
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 5; i++) {
                 sparks.push(new Spark(x, y));
             }
         }
@@ -243,4 +238,16 @@
                 points.forEach(p => p.resolve());
             }
 
-            for (let i = sparks.length -
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                sparks[i].update();
+                if (sparks[i].alpha <= 0) {
+                    sparks.splice(i, 1);
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.lineWidth = 1.8;
+
+            constraints.forEach(c =>
