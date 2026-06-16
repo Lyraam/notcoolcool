@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Magic Potion Lab</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b1329;
+            background-image: radial-gradient(#1c2541 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        #hint {
+            position: absolute;
+            bottom: 30px;
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.9; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="potionCanvas"></canvas>
+    <div id="hint">Drag and Shake the Bottle to Mix Magic! ✨</div>
+
+    <script>
+        const canvas = document.getElementById('potionCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const dpr = window.devicePixelRatio || 1;
+        const size = Math.min(window.innerWidth * 0.9, 450);
+        canvas.width = size * dpr;
+        canvas.height = size * dpr;
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        ctx.scale(dpr, dpr);
+
+        const viewSize = size;
+        
+        let bottle = {
+            x: viewSize / 2,
+            y: viewSize / 2 + 20,
+            targetX: viewSize / 2,
+            targetY: viewSize / 2 + 20,
+            vx: 0,
+            vy: 0,
+            radius: 110,
+            isDragging: false,
+            shakeAmount: 0
+        };
+
+        let liquid = {
+            level: 0.52,
+            angle: 0,
+            angleVelocity: 0,
+            wavePhase: 0,
+            waveHeight: 0,
+            targetWaveHeight: 0,
+            hue: 160,
+            targetHue: 160
+        };
+
+        let particles = [];
+        let pointer = { x: 0, y: 0, lastX: 0, lastY: 0, speedX: 0, speedY: 0 };
+
+        function createParticle(x, y, isStar = false) {
+            particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 3,
+                vy: isStar ? (Math.random() - 0.5) * 3 : -Math.random() * 0.8 - 0.2,
+                size: Math.random() * 5 + 3,
+                alpha: 1,
+                life: 1,
+                decay: Math.random() * 0.02 + 0.015,
+                isStar: isStar,
+                rotation: Math.random() * Math.PI,
+                rotSpeed: (Math.random() - 0.5) * 0.1
+            });
+        }
+
+        function drawStar(cx, cy, spikes, outerRadius, innerRadius, fillStyle) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            let step = Math.PI / spikes;
+
+            ctx.save();
+            ctx.fillStyle = fillStyle;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function updatePhysics() {
+            if (bottle.isDragging) {
+                bottle.x += (bottle.targetX - bottle.x) * 0.25;
+                bottle.y += (bottle.targetY - bottle.y) * 0.25;
+                
+                pointer.speedX = bottle.targetX - pointer.lastX;
+                pointer.speedY = bottle.targetY - pointer.lastY;
+                pointer.lastX = bottle.targetX;
+                pointer.lastY = bottle.targetY;
+                
+                let speedStr = Math.sqrt(pointer.speedX * pointer.speedX + pointer.speedY * pointer.speedY);
+                if (speedStr > 15) {
+                    bottle.shakeAmount += speedStr * 0.1;
+                }
+            } else {
+                let homeX = viewSize / 2;
+                let homeY = viewSize / 2 + Math.sin(Date.now() * 0.002) * 8 + 10;
+                bottle.x += (homeX - bottle.x) * 0.12;
+                bottle.y += (homeY - bottle.y) * 0.12;
+                pointer.speedX *= 0.9;
+                pointer.speedY *= 0.9;
+            }
+
+            bottle.shakeAmount *= 0.95;
+
+            if (bottle.shakeAmount > 12) {
+                liquid.targetHue = (liquid.targetHue + 2) % 360;
+                if (Math.random() < 0.4) {
+                    let angle = Math.random() * Math.PI;
+                    let rx = bottle.x + Math.cos(angle) * (bottle.radius * 0.7);
+                    let ry = bottle.y + (bottle.radius * (1 - liquid.level * 2)) + (Math.random() - 0.5) * 15;
+                    createParticle(rx, ry, true);
+                }
+            }
+            liquid.hue += (liquid.targetHue - liquid.hue) * 0.1;
+
+            let accelerationX = pointer.speedX * 0.003;
+            let gravityPull = (viewSize / 2 - bottle.x) * 0.0001;
+            
+            liquid.angleVelocity -= (accelerationX + gravityPull);
+            liquid.angleVelocity += (0 - liquid.angle) * 0.08;
+            liquid.angleVelocity *= 0.92;
+            liquid.angle += liquid.angleVelocity;
+
+            liquid.angle = Math.max(-0.6, Math.min(0.6, liquid.angle));
+
+            let currentSpeed = Math.abs(pointer.speedX) + Math.abs(pointer.speedY);
+            liquid.targetWaveHeight = Math.min(currentSpeed * 0.6, 25);
+            liquid.waveHeight += (liquid.targetWaveHeight - liquid.waveHeight) * 0.1;
+            liquid.wavePhase += 0.15 + (liquid.waveHeight * 0.01);
+            
+            if (Math.random() < 0.1) {
+                let rAngle = Math.random() * Math.PI;
+                let rDist = Math.random() * (bottle.radius * 0.75);
+                let bx = bottle.x + Math.cos(rAngle) * rDist;
+                let by = bottle.y + Math.sin(rAngle) * rDist;
+                if (by > bottle.y + (bottle.radius * (1 - liquid.level * 2))) {
+                    createParticle(bx, by, false);
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+                p.alpha = Math.max(0, p.life);
+                if (p.isStar) p.rotation += p.rotSpeed;
+
+                let dx = p.x - bottle.x;
+                let dy = p.y - bottle.y;
+                if (dx*dx + dy*dy > bottle.radius * bottle.radius) {
+                    p.life -= 0.1;
+                }
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, viewSize, viewSize);
+
+            let glowGrad = ctx.createRadialGradient(bottle.x, bottle.y, 10, bottle.x, bottle.y, bottle.radius * 1.5);
+            glowGrad.addColorStop(0, `hsla(${liquid.hue}, 80%, 60%, 0.1)`);
+            glowGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = glowGrad;
+            ctx.fillRect(0, 0, viewSize, viewSize);
+
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 7;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            let neckW = 46;
+            let neckH = 35;
+            let neckY = bottle.y - bottle.radius - 10;
+
+            ctx.fillStyle = '#d97706';
+            ctx.beginPath();
+            ctx.rect(bottle.x - neckW/2 + 4, neckY - 18, neckW - 8, 20);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.roundRect(bottle.x - neckW/2 - 6, neckY, neckW + 12, 12, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(bottle.x, bottle.y, bottle.radius, 0, Math.PI * 2);
+            ctx.clip();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fill();
+
+            let liquidBaseY = bottle.y + (bottle.radius * (1 - liquid.level * 2));
+
+            ctx.save();
+            ctx.translate(bottle.x, liquidBaseY);
+            ctx.rotate(liquid.angle);
+
+            ctx.beginPath();
+            let liquidW = bottle.radius * 2.5;
+            ctx.moveTo(-liquidW, 0);
+
+            let waveOffset1 = Math.sin(liquid.wavePhase) * liquid.waveHeight;
+            let waveOffset2 = Math.cos(liquid.wavePhase * 0.8) * liquid.waveHeight;
+            
+            ctx.bezierCurveTo(-liquidW/2, waveOffset1, -liquidW/4, waveOffset2, 0, waveOffset1 * 0.5);
+            ctx.bezierCurveTo(liquidW/4, waveOffset2, liquidW/2, waveOffset1, liquidW, 0);
+
+            ctx.lineTo(liquidW, bottle.radius * 2);
+            ctx.lineTo(-liquidW, bottle.radius * 2);
+            ctx.closePath();
+
+            let fluidGrad = ctx.createLinearGradient(0, -30, 0, bottle.radius);
+            fluidGrad.addColorStop(0, `hsl(${liquid.hue}, 85%, 65%)`);
+            fluidGrad.addColorStop(0.4, `hsl(${liquid.hue}, 80%, 50%)`);
+            fluidGrad.addColorStop(1, `hsl(${(liquid.hue + 25) % 360}, 90%, 35%)`);
+            ctx.fillStyle = fluidGrad;
+            ctx.fill();
+
+            ctx.strokeStyle = `hsl(${liquid.hue}, 90%, 40%)`;
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.restore();
+
+            particles.forEach(p => {
+                if (p.isStar) {
+                    drawStar(p.x, p.y, 4, p.size * 1.5, p.size * 0.4, `rgba(255, 255, 255, ${p.alpha})`);
+                    drawStar(p.x, p.y, 4, p.size * 0.8, p.size * 0.2, `hsla(${liquid.hue}, 100%, 85%, ${p.alpha})`);
+                } else {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.45})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * 0.6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${p.alpha * 0.25})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            });
+
+            ctx.restore();
+
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 7;
+            ctx.beginPath();
+            ctx.arc(bottle.x, bottle.y, bottle.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.arc(bottle.x, bottle.y, bottle.radius - 12, Math.PI * 1.05, Math.PI * 1.45);
+            ctx.stroke();
+
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(bottle.x, bottle.y, bottle.radius - 12, Math.PI * 0.1, Math.PI * 0.25);
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            updatePhysics();
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function onStart(e) {
+            let pos = getPointerPos(e);
+            let dx = pos.x - bottle.x;
+            let dy = pos.y - bottle.y;
+            if (dx*dx + dy*dy < bottle.radius * bottle.radius * 1.2) {
+                bottle.isDragging = true;
+                bottle.targetX = pos.x;
+                bottle.targetY = pos.y;
+                pointer.lastX = pos.x;
+                pointer.lastY = pos.y;
+            }
+        }
+
+        function onMove(e) {
+            if (!bottle.isDragging) return;
+            let pos = getPointerPos(e);
+            bottle.targetX = Math.max(bottle.radius, Math.min(viewSize - bottle.radius, pos.x));
+            bottle.targetY = Math.max(bottle.radius + 20, Math.min(viewSize - bottle.radius, pos.y));
+        }
+
+        function onEnd() {
+            bottle.isDragging = false;
+        }
+
+        window.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+
+        window.addEventListener('touchstart', onStart, { passive: true });
+        window.addEventListener('touchmove', onMove, { passive: true });
+        window.addEventListener('touchend', onEnd);
+
+        window.addEventListener('resize', () => {
+            const newSize = Math.min(window.innerWidth * 0.9, 450);
+            canvas.style.width = newSize + 'px';
+            canvas.style.height = newSize + 'px';
+        });
+
+        gameLoop();
+    </script>
+
+</body>
+</html>
