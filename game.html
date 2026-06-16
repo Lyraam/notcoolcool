@@ -61,30 +61,30 @@
             }
 
             update() {
-                let vx = (this.x - this.px) * 0.92;
-                let vy = (this.y - this.py) * 0.92;
+                let vx = (this.x - this.px) * 0.99;
+                let vy = (this.y - this.py) * 0.99;
 
                 this.px = this.x;
                 this.py = this.y;
 
                 this.x += vx;
-                this.y += vy + 0.15; 
+                this.y += vy + 0.08; 
 
-                if (this.y > height - 30) {
-                    this.y = height - 30;
-                    this.py = this.y + vy * 0.3;
+                if (this.y > height - 35) {
+                    this.y = height - 35;
+                    this.py = this.y + vy * 0.2;
                 }
-                if (this.y < 30) {
-                    this.y = 30;
-                    this.py = this.y + vy * 0.3;
+                if (this.y < 35) {
+                    this.y = 35;
+                    this.py = this.y + vy * 0.2;
                 }
-                if (this.x > width - 30) {
-                    this.x = width - 30;
-                    this.px = this.x + vx * 0.3;
+                if (this.x > width - 35) {
+                    this.x = width - 35;
+                    this.px = this.x + vx * 0.2;
                 }
-                if (this.x < 30) {
-                    this.x = 30;
-                    this.px = this.x + vx * 0.3;
+                if (this.x < 35) {
+                    this.x = 35;
+                    this.px = this.x + vx * 0.2;
                 }
             }
         }
@@ -102,7 +102,7 @@
                 let dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist === 0) return;
 
-                let diff = (this.length - dist) / dist * 0.25;
+                let diff = (this.length - dist) / dist * 0.07;
                 let offsetX = dx * diff;
                 let offsetY = dy * diff;
 
@@ -142,12 +142,12 @@
         }
 
         function spawnFood() {
-            food.x = 50 + Math.random() * (width - 100);
+            food.x = 60 + Math.random() * (width - 120);
             food.y = 100 + Math.random() * (height - 200);
         }
 
         function updateGame() {
-            jellyRadius += (targetRadius - jellyRadius) * 0.08;
+            jellyRadius += (targetRadius - jellyRadius) * 0.05;
             
             springs.forEach(s => {
                 if (s.p2 === centerPoint) s.length = jellyRadius;
@@ -163,20 +163,20 @@
                     let mdy = mouse.y - p.y;
                     let mdist = Math.sqrt(mdx * mdx + mdy * mdy);
                     if (mdist > 5) {
-                        p.x += (mdx / mdist) * 1.2;
-                        p.y += (mdy / mdist) * 1.2;
+                        p.x += (mdx / mdist) * 1.8;
+                        p.y += (mdy / mdist) * 1.8;
                     }
                 });
                 let cmdx = mouse.x - centerPoint.x;
                 let cmdy = mouse.y - centerPoint.y;
                 let cmdist = Math.sqrt(cmdx * cmdx + cmdy * cmdy);
                 if (cmdist > 5) {
-                    centerPoint.x += (cmdx / cmdist) * 1.0;
-                    centerPoint.y += (cmdy / cmdist) * 1.0;
+                    centerPoint.x += (cmdx / cmdist) * 1.5;
+                    centerPoint.y += (cmdy / cmdist) * 1.5;
                 }
             }
 
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 4; i++) {
                 springs.forEach(s => s.resolve());
             }
 
@@ -184,9 +184,9 @@
             let fdy = centerPoint.y - food.y;
             let fdist = Math.sqrt(fdx * fdx + fdy * fdy);
             
-            if (fdist < jellyRadius + 12) {
+            if (fdist < jellyRadius + 15) {
                 score++;
-                targetRadius = Math.min(jellyRadius + 5, 110); 
+                targetRadius = Math.min(jellyRadius + 6, 120); 
                 spawnFood();
                 
                 points.forEach(p => {
@@ -194,8 +194,8 @@
                     let pdy = p.y - centerPoint.y;
                     let pdist = Math.sqrt(pdx * pdx + pdy * pdy);
                     if (pdist > 0) {
-                        p.x += (pdx / pdist) * 20;
-                        p.y += (pdy / pdist) * 20;
+                        p.x += (pdx / pdist) * 55;
+                        p.y += (pdy / pdist) * 55;
                     }
                 });
             }
@@ -217,7 +217,7 @@
             ctx.arc(food.x, food.y, fRadius, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.fillStyle = 'rgba(255, 0, 128, 0.75)';
+            ctx.fillStyle = 'rgba(255, 0, 128, 0.72)';
             ctx.strokeStyle = '#ff0080';
             ctx.lineWidth = 4.0;
             ctx.beginPath();
