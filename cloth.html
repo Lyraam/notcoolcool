@@ -44,26 +44,27 @@
         canvas.width = width;
         canvas.height = height;
 
-        const physicsAccuracy = 5;
+        const physicsAccuracy = 4;
         const gravity = 0.15;
-        const tearDistance = 45;
+        const tearDistance = 40;
 
-        let numCols = 40;
-        let numRows = 24;
-        let restDistance = 8;
+        let numCols = 30;
+        let numRows = 20;
+        let restDistance = 10;
 
         if (width < 500) {
-            numCols = 25;
-            numRows = 18;
-            restDistance = Math.floor(width * 0.75 / numCols);
+            numCols = 22;
+            numRows = 16;
+            restDistance = Math.floor((width * 0.8) / (numCols - 1));
         } else {
-            restDistance = Math.floor(400 / numCols);
+            restDistance = 14;
         }
 
         let startX = (width - (numCols - 1) * restDistance) / 2;
-        let startY = height * 0.12;
+        let startY = height * 0.15;
 
         let points = [];
+        let constraints = [];
 
         class Point {
             constructor(x, y) {
@@ -75,14 +76,13 @@
                 this.vy = 0;
                 this.pinX = null;
                 this.pinY = null;
-                this.constraints = [];
             }
 
             update() {
                 if (this.pinX !== null && this.pinY !== null) return;
 
-                this.vx = (this.x - this.px) * 0.99;
-                this.vy = (this.y - this.py) * 0.99;
+                this.vx = (this.x - this.px) * 0.98;
+                this.vy = (this.y - this.py) * 0.98;
 
                 this.px = this.x;
                 this.py = this.y;
@@ -141,6 +141,7 @@
 
         function initCloth() {
             points = [];
+            constraints = [];
             const matrix = [];
 
             for (let y = 0; y < numRows; y++) {
@@ -158,12 +159,10 @@
             for (let y = 0; y < numRows; y++) {
                 for (let x = 0; x < numCols; x++) {
                     if (x < numCols - 1) {
-                        const c = new Constraint(matrix[y][x], matrix[y][x + 1]);
-                        matrix[y][x].constraints.push(c);
+                        constraints.push(new Constraint(matrix[y][x], matrix[y][x + 1]));
                     }
                     if (y < numRows - 1) {
-                        const c = new Constraint(matrix[y][x], matrix[y + 1][x]);
-                        matrix[y][x].constraints.push(c);
+                        constraints.push(new Constraint(matrix[y][x], matrix[y + 1][x]));
                     }
                 }
             }
@@ -171,18 +170,92 @@
 
         let mouse = { x: 0, y: 0, px: 0, py: 0, isDown: false };
 
-        function checkCut(p1, p2) {
-            const mx1 = mouse.px;
-            const my1 = mouse.py;
-            const mx2 = mouse.x;
-            const my2 = mouse.y;
+        function checkLineIntersection(p1, p2) {
+            const x1 = mouse.px, y1 = mouse.py;
+            const x2 = mouse.x,  y2 = mouse.y;
+            const x3 = p1.x,     y3 = p1.y;
+            const x4 = p2.x,     y4 = p2.y;
 
-            const px1 = p1.x;
-            const py1 = p1.y;
-            const px2 = p2.x;
-            const py2 = p2.y;
+            const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            if (den === 0) return false;
 
-            const det = (mx2 - mx1) * (py2 - py1) - (px2 - px1) * (my2 - my1);
-            if (det === 0) return false;
+            const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+            const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
 
-            const lambda = ((py2 - py1) * (px
+            return (t >= 0 && t <= 1 && u >= 0 && u <= 1);
+        }
+
+        function updatePhysics() {
+            points.forEach(p => p.update());
+
+            for (let i = 0; i < physicsAccuracy; i++) {
+                constraints.forEach(c => {
+                    c.resolve();
+                    if (mouse.isDown && !c.isTorn) {
+                        if (checkLineIntersection(c.p1, c.p2)) {
+                            c.isTorn = true;
+                        }
+                    }
+                });
+                points.forEach(p => p.resolve());
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(100, 200, 255, 0.55)';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+
+            constraints.forEach(c => {
+                if (!c.isTorn) {
+                    ctx.moveTo(c.p1.x, c.p1.y);
+                    ctx.lineTo(c.p2.x, c.p2.y);
+                }
+            });
+            ctx.stroke();
+        }
+
+        function loop() {
+            updatePhysics();
+            draw();
+            mouse.px = mouse.x;
+            mouse.py = mouse.y;
+            requestAnimationFrame(loop);
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            mouse.isDown = true;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.px = e.clientX;
+            mouse.py = e.clientY;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (mouse.isDown) {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            }
+        });
+
+        window.addEventListener('pointerup', () => mouse.isDown = false);
+        window.addEventListener('pointercancel', () => mouse.isDown = false);
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            startX = (width - (numCols - 1) * restDistance) / 2;
+            startY = height * 0.15;
+            initCloth();
+        });
+
+        initCloth();
+        loop();
+    </script>
+
+</body>
+</html>
