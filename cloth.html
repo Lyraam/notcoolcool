@@ -34,7 +34,7 @@
     <canvas id="clothCanvas"></canvas>
 
     <script>
-        document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+        window.addEventListener('scroll', e => e.preventDefault(), { passive: false });
 
         const canvas = document.getElementById('clothCanvas');
         const ctx = canvas.getContext('2d');
@@ -44,17 +44,16 @@
         canvas.width = width;
         canvas.height = height;
 
-        const physicsAccuracy = 3; 
         const gravity = 0.15;
         const tearDistance = 40;
 
-        let numCols = 26;
-        let numRows = 18;
-        let restDistance = 12;
+        let numCols = 20;
+        let numRows = 15;
+        let restDistance = 14;
 
         if (width < 500) {
-            numCols = 20;
-            numRows = 15;
+            numCols = 18;
+            numRows = 14;
             restDistance = Math.floor((width * 0.8) / (numCols - 1));
         }
 
@@ -71,8 +70,6 @@
                 this.y = y;
                 this.px = x;
                 this.py = y;
-                this.vx = 0;
-                this.vy = 0;
                 this.pinX = null;
                 this.pinY = null;
             }
@@ -80,14 +77,14 @@
             update() {
                 if (this.pinX !== null && this.pinY !== null) return;
 
-                this.vx = (this.x - this.px) * 0.98;
-                this.vy = (this.y - this.py) * 0.98;
+                let vx = (this.x - this.px) * 0.98;
+                let vy = (this.y - this.py) * 0.98;
 
                 this.px = this.x;
                 this.py = this.y;
 
-                this.x += this.vx;
-                this.y += this.vy + gravity;
+                this.x += vx;
+                this.y += vy + gravity;
             }
 
             pin(px, py) {
@@ -107,16 +104,15 @@
             constructor(p1, p2) {
                 this.p1 = p1;
                 this.p2 = p2;
-                this.length = restDistance;
                 this.isTorn = false;
             }
 
             resolve() {
                 if (this.isTorn) return;
 
-                const dx = this.p2.x - this.p1.x;
-                const dy = this.p2.y - this.p1.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+                let dx = this.p2.x - this.p1.x;
+                let dy = this.p2.y - this.p1.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
 
                 if (dist > tearDistance) {
                     this.isTorn = true;
@@ -124,9 +120,9 @@
                     return;
                 }
 
-                const diff = (this.length - dist) / dist * 0.5;
-                const offsetX = dx * diff;
-                const offsetY = dy * diff;
+                let diff = (restDistance - dist) / dist * 0.5;
+                let offsetX = dx * diff;
+                let offsetY = dy * diff;
 
                 if (this.p1.pinX === null) {
                     this.p1.x -= offsetX;
@@ -143,10 +139,9 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.vx = (Math.random() - 0.5) * 5;
+                this.vx = (Math.random() - 0.5) * 4;
                 this.vy = (Math.random() - 0.5) * 4 - 1;
                 this.alpha = 1;
-                this.size = Math.random() * 2 + 1;
             }
             update() {
                 this.x += this.vx;
@@ -155,13 +150,13 @@
                 this.alpha -= 0.05;
             }
             draw() {
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
-                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.fillStyle = "rgba(255, 255, 255, " + this.alpha + ")";
+                ctx.fillRect(this.x, this.y, 2, 2);
             }
         }
 
         function createSparkExplosion(x, y) {
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 3; i++) {
                 sparks.push(new Spark(x, y));
             }
         }
@@ -169,4 +164,112 @@
         function initCloth() {
             points = [];
             constraints = [];
-            sparks =
+            sparks = [];
+            let matrix = [];
+
+            for (let y = 0; y < numRows; y++) {
+                matrix[y] = [];
+                for (let x = 0; x < numCols; x++) {
+                    let p = new Point(startX + x * restDistance, startY + y * restDistance);
+                    if (y === 0 && x % 2 === 0) {
+                        p.pin(p.x, p.y);
+                    }
+                    points.push(p);
+                    matrix[y][x] = p;
+                }
+            }
+
+            for (let y = 0; y < numRows; y++) {
+                for (let x = 0; x < numCols; x++) {
+                    if (x < numCols - 1) {
+                        constraints.push(new Constraint(matrix[y][x], matrix[y][x + 1]));
+                    }
+                    if (y < numRows - 1) {
+                        constraints.push(new Constraint(matrix[y][x], matrix[y + 1][x]));
+                    }
+                }
+            }
+        }
+
+        let mouse = { x: 0, y: 0, isDown: false };
+
+        function checkCut(c) {
+            let midX = (c.p1.x + c.p2.x) / 2;
+            let midY = (c.p1.y + c.p2.y) / 2;
+            let dx = mouse.x - midX;
+            let dy = mouse.y - midY;
+            return (Math.sqrt(dx * dx + dy * dy) < 14); 
+        }
+
+        function updatePhysics() {
+            points.forEach(p => p.update());
+
+            for (let i = 0; i < physicsAccuracy = 3; i++) {
+                constraints.forEach(c => {
+                    c.resolve();
+                    if (mouse.isDown && !c.isTorn && checkCut(c)) {
+                        c.isTorn = true;
+                    }
+                });
+                points.forEach(p => p.resolve());
+            }
+
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                sparks[i].update();
+                if (sparks[i].alpha <= 0) sparks.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(0, 195, 255, 0.7)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+
+            constraints.forEach(c => {
+                if (!c.isTorn) {
+                    ctx.moveTo(c.p1.x, c.p1.y);
+                    ctx.lineTo(c.p2.x, c.p2.y);
+                }
+            });
+            ctx.stroke();
+
+            sparks.forEach(s => s.draw());
+        }
+
+        function loop() {
+            updatePhysics();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function setMouse(e) {
+            let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            let clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            mouse.x = clientX;
+            mouse.y = clientY;
+        }
+
+        window.addEventListener('mousedown', (e) => { mouse.isDown = true; setMouse(e); });
+        window.addEventListener('mousemove', (e) => { if (mouse.isDown) setMouse(e); });
+        window.addEventListener('mouseup', () => mouse.isDown = false);
+
+        window.addEventListener('touchstart', (e) => { mouse.isDown = true; setMouse(e); }, { passive: true });
+        window.addEventListener('touchmove', (e) => { if (mouse.isDown) setMouse(e); }, { passive: true });
+        window.addEventListener('touchend', () => mouse.isDown = false);
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+            startX = (width - (numCols - 1) * restDistance) / 2;
+            startY = height * 0.15;
+            initCloth();
+        });
+
+        initCloth();
+        loop();
+    </script>
+
+</body>
+</html>
