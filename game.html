@@ -197,16 +197,65 @@
             ctx.clearRect(0, 0, width, height);
 
             let fRadius = food.radius + Math.sin(food.pulse) * 3;
+            
+            ctx.fillStyle = 'rgba(0, 255, 204, 0.3)';
+            ctx.beginPath();
+            ctx.arc(food.x, food.y, fRadius + 6, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.fillStyle = '#00ffcc';
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#00ffcc';
             ctx.beginPath();
             ctx.arc(food.x, food.y, fRadius, 0, Math.PI * 2);
             ctx.fill();
-            ctx.shadowBlur = 0; 
 
             ctx.fillStyle = 'rgba(255, 0, 128, 0.75)';
             ctx.strokeStyle = '#ff0080';
             ctx.lineWidth = 3.5;
             ctx.beginPath();
-            ctx
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText("SCORE: " + score, 25, 45);
+        }
+
+        function loop() {
+            updateGame();
+            drawGame();
+            requestAnimationFrame(loop);
+        }
+
+        function setMouse(e) {
+            let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            let clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            mouse.x = clientX;
+            mouse.y = clientY;
+        }
+
+        window.addEventListener('mousedown', (e) => { mouse.isDown = true; setMouse(e); });
+        window.addEventListener('mousemove', (e) => { if (mouse.isDown) setMouse(e); });
+        window.addEventListener('mouseup', () => mouse.isDown = false);
+
+        window.addEventListener('touchstart', (e) => { mouse.isDown = true; setMouse(e); }, { passive: true });
+        window.addEventListener('touchmove', (e) => { if (mouse.isDown) setMouse(e); }, { passive: true });
+        window.addEventListener('touchend', () => mouse.isDown = false);
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+            initJelly();
+        });
+
+        initJelly();
+        loop();
+    </script>
+
+</body>
+</html>
