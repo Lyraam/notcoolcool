@@ -44,20 +44,18 @@
         canvas.width = width;
         canvas.height = height;
 
-        const physicsAccuracy = 4;
+        const physicsAccuracy = 3; 
         const gravity = 0.15;
         const tearDistance = 40;
 
-        let numCols = 30;
-        let numRows = 20;
-        let restDistance = 10;
+        let numCols = 26;
+        let numRows = 18;
+        let restDistance = 12;
 
         if (width < 500) {
-            numCols = 22;
-            numRows = 16;
+            numCols = 20;
+            numRows = 15;
             restDistance = Math.floor((width * 0.8) / (numCols - 1));
-        } else {
-            restDistance = 14;
         }
 
         let startX = (width - (numCols - 1) * restDistance) / 2;
@@ -111,7 +109,6 @@
                 this.p2 = p2;
                 this.length = restDistance;
                 this.isTorn = false;
-                this.stress = 0;
             }
 
             resolve() {
@@ -120,9 +117,6 @@
                 const dx = this.p2.x - this.p1.x;
                 const dy = this.p2.y - this.p1.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-
-                this.stress = (dist - this.length) / (tearDistance - this.length);
-                if (this.stress < 0) this.stress = 0;
 
                 if (dist > tearDistance) {
                     this.isTorn = true;
@@ -149,28 +143,25 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.vx = (Math.random() - 0.5) * 4;
+                this.vx = (Math.random() - 0.5) * 5;
                 this.vy = (Math.random() - 0.5) * 4 - 1;
                 this.alpha = 1;
-                this.hue = Math.random() > 0.5 ? 340 : 190; 
                 this.size = Math.random() * 2 + 1;
             }
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vy += 0.1; 
-                this.alpha -= 0.04;
+                this.vy += 0.1;
+                this.alpha -= 0.05;
             }
             draw() {
-                ctx.fillStyle = `hsla(${this.hue}, 100%, 65%, ${this.alpha})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
             }
         }
 
         function createSparkExplosion(x, y) {
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 4; i++) {
                 sparks.push(new Spark(x, y));
             }
         }
@@ -178,76 +169,4 @@
         function initCloth() {
             points = [];
             constraints = [];
-            sparks = [];
-            const matrix = [];
-
-            for (let y = 0; y < numRows; y++) {
-                matrix[y] = [];
-                for (let x = 0; x < numCols; x++) {
-                    const p = new Point(startX + x * restDistance, startY + y * restDistance);
-                    if (y === 0 && x % 2 === 0) {
-                        p.pin(p.x, p.y);
-                    }
-                    points.push(p);
-                    matrix[y][x] = p;
-                }
-            }
-
-            for (let y = 0; y < numRows; y++) {
-                for (let x = 0; x < numCols; x++) {
-                    if (x < numCols - 1) {
-                        constraints.push(new Constraint(matrix[y][x], matrix[y][x + 1]));
-                    }
-                    if (y < numRows - 1) {
-                        constraints.push(new Constraint(matrix[y][x], matrix[y + 1][x]));
-                    }
-                }
-            }
-        }
-
-        let mouse = { x: 0, y: 0, px: 0, py: 0, isDown: false };
-
-        function checkLineIntersection(p1, p2) {
-            const x1 = mouse.px, y1 = mouse.py;
-            const x2 = mouse.x,  y2 = mouse.y;
-            const x3 = p1.x,     y3 = p1.y;
-            const x4 = p2.x,     y4 = p2.y;
-
-            const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-            if (den === 0) return false;
-
-            const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
-            const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
-
-            return (t >= 0 && t <= 1 && u >= 0 && u <= 1);
-        }
-
-        function updatePhysics() {
-            points.forEach(p => p.update());
-
-            for (let i = 0; i < physicsAccuracy; i++) {
-                constraints.forEach(c => {
-                    c.resolve();
-                    if (mouse.isDown && !c.isTorn) {
-                        if (checkLineIntersection(c.p1, c.p2)) {
-                            c.isTorn = true;
-                            createSparkExplosion((c.p1.x + c.p2.x) / 2, (c.p1.y + c.p2.y) / 2);
-                        }
-                    }
-                });
-                points.forEach(p => p.resolve());
-            }
-
-            for (let i = sparks.length - 1; i >= 0; i--) {
-                sparks[i].update();
-                if (sparks[i].alpha <= 0) {
-                    sparks.splice(i, 1);
-                }
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, width, height);
-            ctx.lineWidth = 1.8;
-
-            constraints.forEach(c =>
+            sparks =
