@@ -77,7 +77,7 @@
         const ctx = canvas.getContext('2d');
 
         const strokeColor = '#1e293b';
-        const strokeWidth = 7;
+        const strokeWidth = 3.5; 
         
         let bottle = {
             x: 200,
@@ -91,13 +91,13 @@
 
         let pointer = { speedX: 0, speedY: 0 };
 
-        const SPREAD = 0.25;
-        const DAMPING = 0.06;
-        const TENSION = 0.025;
-        const POINTS_COUNT = 15;
+        const SPREAD = 0.15;
+        const DAMPING = 0.12; 
+        const TENSION = 0.015; 
+        const POINTS_COUNT = 17;
         
         let waterPoints = [];
-        let baseLiquidY = 10; 
+        let baseLiquidY = 15; 
 
         for (let i = 0; i < POINTS_COUNT; i++) {
             waterPoints.push({
@@ -123,7 +123,7 @@
             bubbles.push({
                 angle: Math.random() * Math.PI * 2,
                 dist: Math.random() * 80,
-                size: Math.random() * 5 + 4,
+                size: Math.random() * 4 + 3,
                 seed: Math.random() * 100
             });
         }
@@ -160,21 +160,22 @@
             let prevY = bottle.y;
 
             if (bottle.isDragging) {
-                bottle.x += (bottle.targetX - bottle.x) * 0.25;
-                bottle.y += (bottle.targetY - bottle.y) * 0.25;
+                bottle.x += (bottle.targetX - bottle.x) * 0.2;
+                bottle.y += (bottle.targetY - bottle.y) * 0.2;
                 pointer.speedX = bottle.x - prevX;
                 pointer.speedY = bottle.y - prevY;
                 
                 let speedStr = Math.sqrt(pointer.speedX * pointer.speedX + pointer.speedY * pointer.speedY);
-                if (speedStr > 6) {
+                if (speedStr > 3) {
                     let impactIndex = Math.floor(Math.random() * POINTS_COUNT);
-                    waterPoints[impactIndex].v -= pointer.speedX * 0.6;
+                    waterPoints[impactIndex].v -= pointer.speedX * 0.4;
+                    waterPoints[impactIndex].v += pointer.speedY * 0.2;
                 }
             } else {
                 let homeX = 200;
                 let homeY = 210 + Math.sin(Date.now() * 0.002) * 6;
-                bottle.x += (homeX - bottle.x) * 0.12;
-                bottle.y += (homeY - bottle.y) * 0.12;
+                bottle.x += (homeX - bottle.x) * 0.1;
+                bottle.y += (homeY - bottle.y) * 0.1;
                 pointer.speedX = bottle.x - prevX;
                 pointer.speedY = bottle.y - prevY;
             }
@@ -185,14 +186,14 @@
                 p.v += force;
                 p.y += p.v;
 
-                p.v -= pointer.speedX * 0.06 * (p.x / 110);
-                p.v += pointer.speedY * 0.02;
+                p.v -= pointer.speedX * 0.04 * (p.x / 110);
+                p.v += pointer.speedY * 0.015;
             }
 
             let leftToRight = new Array(POINTS_COUNT).fill(0);
             let rightToLeft = new Array(POINTS_COUNT).fill(0);
 
-            for (let step = 0; step < 6; step++) {
+            for (let step = 0; step < 4; step++) {
                 for (let i = 0; i < POINTS_COUNT; i++) {
                     if (i > 0) {
                         leftToRight[i] = SPREAD * (waterPoints[i].y - waterPoints[i - 1].y);
@@ -209,7 +210,7 @@
                 }
             }
 
-            heart.vX += (pointer.speedX * -0.25);
+            heart.vX += (pointer.speedX * -0.2);
             heart.vX += (0 - heart.x) * 0.04;
             heart.vX *= 0.85;
             heart.x += heart.vX;
@@ -218,13 +219,13 @@
             let currentWaterY = getWaterHeightAt(heart.x);
             heart.y += (currentWaterY - heart.y) * 0.25;
 
-            let deltaX = 8;
+            let deltaX = 10;
             let hLeft = getWaterHeightAt(heart.x - deltaX);
             let hRight = getWaterHeightAt(heart.x + deltaX);
             let targetAngle = Math.atan2(hRight - hLeft, deltaX * 2);
 
-            heart.angleV += (targetAngle - heart.angle) * 0.1;
-            heart.angleV *= 0.75;
+            heart.angleV += (targetAngle - heart.angle) * 0.08;
+            heart.angleV *= 0.7;
             heart.angle += heart.angleV;
         }
 
@@ -264,7 +265,7 @@
             let lastP = waterPoints[POINTS_COUNT - 1];
             ctx.lineTo(bottle.x + lastP.x, bottle.y + lastP.y);
 
-            let steps = 30;
+            let steps = 40;
             for (let i = 0; i <= steps; i++) {
                 let angle = (i / steps) * Math.PI; 
                 let cx = bottle.x + Math.cos(angle) * 110;
@@ -298,10 +299,10 @@
                 let waterSurfaceY = getWaterHeightAt(localX);
                 let distToCenter = Math.sqrt(localX * localX + localY * localY);
 
-                if (localY > waterSurfaceY + 5 && distToCenter < 100) {
+                if (localY > waterSurfaceY + 5 && distToCenter < 102) {
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                     ctx.strokeStyle = strokeColor;
-                    ctx.lineWidth = 3;
+                    ctx.lineWidth = 2; 
                     ctx.beginPath();
                     ctx.arc(bx, by, b.size, 0, Math.PI * 2);
                     ctx.fill();
@@ -314,14 +315,14 @@
             ctx.rotate(heart.angle);
             ctx.fillStyle = '#ff4b72';
             ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 5;
-            drawHeartShape(0, 0, 14);
+            ctx.lineWidth = 3; 
+            drawHeartShape(0, 0, 13);
             ctx.fill();
             ctx.stroke();
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
             ctx.beginPath();
-            ctx.arc(-3, -2, 3, 0, Math.PI * 2);
+            ctx.arc(-3, -2, 2.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
 
@@ -332,9 +333,9 @@
             ctx.stroke();
 
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.lineWidth = 6;
+            ctx.lineWidth = 3.5;
             ctx.beginPath();
-            ctx.arc(bottle.x, bottle.y, 96, Math.PI * 1.05, Math.PI * 1.4);
+            ctx.arc(bottle.x, bottle.y, 98, Math.PI * 1.05, Math.PI * 1.4);
             ctx.stroke();
         }
 
