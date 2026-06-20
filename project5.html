@@ -28,8 +28,18 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
+        #canvasContainer {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: block;
+        }
+
         canvas {
             display: block;
+            width: 400px;
+            height: 400px;
+            background-color: #0b1329;
             cursor: grab;
         }
 
@@ -39,7 +49,9 @@
 
         #hint {
             position: absolute;
-            bottom: 30px;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
             color: #64748b;
             font-size: 14px;
             font-weight: 600;
@@ -58,36 +70,29 @@
 </head>
 <body>
 
-    <canvas id="potionCanvas"></canvas>
-    <div id="hint">Drag and Shake the Bottle to Mix Magic! ✨</div>
+    <div id="canvasContainer">
+        <canvas id="potionCanvas" width="400" height="400"></canvas>
+        <div id="hint">Drag and Shake the Bottle to Mix Magic! ✨</div>
+    </div>
 
     <script>
         const canvas = document.getElementById('potionCanvas');
         const ctx = canvas.getContext('2d');
 
-        const dpr = window.devicePixelRatio || 1;
-        const size = Math.min(window.innerWidth * 0.9, 450);
-        canvas.width = size * dpr;
-        canvas.height = size * dpr;
-        canvas.style.width = size + 'px';
-        canvas.style.height = size + 'px';
-        ctx.scale(dpr, dpr);
-
-        const viewSize = size;
         const strokeColor = '#1e293b';
         const strokeWidth = 7;
         
         let bottle = {
-            x: viewSize / 2,
-            y: viewSize / 2 + 20,
-            targetX: viewSize / 2,
-            targetY: viewSize / 2 + 20,
+            x: 200,
+            y: 220,
+            targetX: 200,
+            targetY: 220,
             radius: 110,
             isDragging: false,
             shakeAmount: 0
         };
 
-        let pointer = { lastX: viewSize / 2, lastY: viewSize / 2 + 20, speedX: 0, speedY: 0 };
+        let pointer = { lastX: 200, lastY: 220, speedX: 0, speedY: 0 };
 
         const SPREAD = 0.2;
         const DAMPING = 0.05;
@@ -101,16 +106,16 @@
 
         for (let i = 0; i < POINTS_COUNT; i++) {
             waterPoints.push({
-                x: ((i / (POINTS_COUNT - 1)) * bottle.radius * 2) - bottle.radius,
-                y: baseLiquidOffset,
-                targetY: baseLiquidOffset,
+                x: ((i / (POINTS_COUNT - 1)) * 110 * 2) - 110,
+                y: 10,
+                targetY: 10,
                 v: 0
             });
         }
 
         let heart = {
             x: 0,
-            y: baseLiquidOffset,
+            y: 10,
             vX: 0,
             vY: 0,
             angle: 0,
@@ -189,7 +194,7 @@
                     return p1.y + (p2.y - p1.y) * ratio;
                 }
             }
-            return baseLiquidOffset;
+            return 10;
         }
 
         function updatePhysics() {
@@ -209,8 +214,8 @@
                     waterPoints[impactIndex].v -= pointer.speedX * 0.5;
                 }
             } else {
-                let homeX = viewSize / 2;
-                let homeY = viewSize / 2 + Math.sin(Date.now() * 0.002) * 6 + 10;
+                let homeX = 200;
+                let homeY = 220 + Math.sin(Date.now() * 0.002) * 6;
                 bottle.x += (homeX - bottle.x) * 0.12;
                 bottle.y += (homeY - bottle.y) * 0.12;
                 pointer.speedX = bottle.x - prevX;
@@ -222,7 +227,7 @@
             if (bottle.shakeAmount > 12) {
                 targetHue = (targetHue + 2) % 360;
                 if (Math.random() < 0.3) {
-                    let rx = bottle.x + (Math.random() - 0.5) * (bottle.radius * 1.2);
+                    let rx = bottle.x + (Math.random() - 0.5) * 132;
                     let ry = bottle.y + getWaterHeightAt(rx - bottle.x) - 5;
                     createParticle(rx, ry, true);
                 }
@@ -235,7 +240,7 @@
                 p.v += force;
                 p.y += p.v;
 
-                p.v -= pointer.speedX * 0.05 * (p.x / bottle.radius);
+                p.v -= pointer.speedX * 0.05 * (p.x / 110);
                 p.v += pointer.speedY * 0.03;
             }
 
@@ -263,7 +268,7 @@
             heart.vX += (0 - heart.x) * 0.05;
             heart.vX *= 0.85;
             heart.x += heart.vX;
-            heart.x = Math.max(-bottle.radius * 0.7, Math.min(bottle.radius * 0.7, heart.x));
+            heart.x = Math.max(-77, Math.min(77, heart.x));
 
             let currentWaterY = getWaterHeightAt(heart.x);
             heart.y += (currentWaterY - heart.y) * 0.25;
@@ -279,7 +284,7 @@
 
             if (Math.random() < 0.06) {
                 let rAngle = Math.random() * Math.PI;
-                let rDist = Math.random() * (bottle.radius * 0.7);
+                let rDist = Math.random() * 77;
                 let bx = bottle.x + Math.cos(rAngle) * rDist;
                 let by = bottle.y + Math.sin(rAngle) * rDist;
                 if (by > bottle.y + getWaterHeightAt(bx - bottle.x)) {
@@ -297,7 +302,7 @@
 
                 let dx = p.x - bottle.x;
                 let dy = p.y - bottle.y;
-                if (dx*dx + dy*dy > bottle.radius * bottle.radius) {
+                if (dx*dx + dy*dy > 12100) {
                     p.life -= 0.1;
                 }
                 if (p.life <= 0) particles.splice(i, 1);
@@ -308,4 +313,7 @@
         }
 
         function drawGame() {
-            ctx.clearRect(0, 0, viewSize, viewSize);
+            ctx.clearRect(0, 0, 400, 400);
+
+            let glowGrad = ctx.createRadialGradient(bottle.x, bottle.y, 10, bottle.x, bottle.y, 165);
+            glowGrad.addColorStop(0, `hsla(${liquidHue}, 80%, 60%, 0.15)`);
