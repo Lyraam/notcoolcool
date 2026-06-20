@@ -8,7 +8,6 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
             touch-action: none;
         }
 
@@ -16,8 +15,6 @@
             margin: 0;
             padding: 0;
             background-color: #0b1329;
-            background-image: radial-gradient(#1c2541 1px, transparent 1px);
-            background-size: 24px 24px;
             color: #ffffff;
             display: flex;
             flex-direction: column;
@@ -25,295 +22,196 @@
             justify-content: center;
             min-height: 100vh;
             overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: sans-serif;
         }
 
         #canvasContainer {
             position: relative;
             width: 400px;
             height: 400px;
-            display: block;
         }
 
         canvas {
             display: block;
             width: 400px;
             height: 400px;
-            background-color: #0b1329;
-            cursor: grab;
+            background-color: #111827;
+            border: 4px solid #374151;
         }
 
-        canvas:active {
-            cursor: grabbing;
+        #errorConsole {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255, 0, 0, 0.85);
+            color: #fff;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+            display: none;
+            z-index: 999;
+            white-space: pre-wrap;
+            pointer-events: none;
         }
 
         #hint {
             position: absolute;
-            bottom: 10px;
+            bottom: 20px;
             width: 100%;
             text-align: center;
-            color: #64748b;
+            color: #9ca3af;
             font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
             pointer-events: none;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            animation: pulse 2s infinite ease-in-out;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 0.9; }
         }
     </style>
 </head>
 <body>
 
     <div id="canvasContainer">
+        <div id="errorConsole"></div>
         <canvas id="potionCanvas" width="400" height="400"></canvas>
-        <div id="hint">Drag and Shake the Bottle to Mix Magic! ✨</div>
+        <div id="hint">Drag and Shake the Bottle ✨</div>
     </div>
 
     <script>
-        const canvas = document.getElementById('potionCanvas');
-        const ctx = canvas.getContext('2d');
-
-        const strokeColor = '#1e293b';
-        const strokeWidth = 7;
-        
-        let bottle = {
-            x: 200,
-            y: 220,
-            targetX: 200,
-            targetY: 220,
-            radius: 110,
-            isDragging: false,
-            shakeAmount: 0
+        const errorConsole = document.getElementById('errorConsole');
+        window.onerror = function(msg, url, line) {
+            errorConsole.style.display = 'block';
+            errorConsole.innerText += `Error: ${msg}\nLine: ${line}\n\n`;
+            return false;
         };
 
-        let pointer = { lastX: 200, lastY: 220, speedX: 0, speedY: 0 };
+        try {
+            const canvas = document.getElementById('potionCanvas');
+            const ctx = canvas.getContext('2d');
 
-        const SPREAD = 0.2;
-        const DAMPING = 0.05;
-        const TENSION = 0.015;
-        const POINTS_COUNT = 15;
-        
-        let waterPoints = [];
-        let baseLiquidOffset = 10; 
-        let liquidHue = 160;
-        let targetHue = 160;
+            let bottleX = 200;
+            let bottleY = 200;
+            let targetX = 200;
+            let targetY = 200;
+            let radius = 100;
+            let isDragging = false;
+            
+            let heartX = 0;
+            let heartY = 20;
+            let heartVx = 0;
+            let waveTimer = 0;
 
-        for (let i = 0; i < POINTS_COUNT; i++) {
-            waterPoints.push({
-                x: ((i / (POINTS_COUNT - 1)) * 110 * 2) - 110,
-                y: 10,
-                targetY: 10,
-                v: 0
+            function update() {
+                waveTimer += 0.05;
+
+                if (isDragging) {
+                    bottleX += (targetX - bottleX) * 0.2;
+                    bottleY += (targetY - bottleY) * 0.2;
+                } else {
+                    bottleX += (200 - bottleX) * 0.1;
+                    bottleY += (200 + Math.sin(Date.now() * 0.003) * 10 - bottleY) * 0.1;
+                }
+
+                let speedX = targetX - bottleX;
+                heartVx += speedX * -0.05;
+                heartVx += (0 - heartX) * 0.05;
+                heartVx *= 0.85;
+                heartX += heartVx;
+
+                if (heartX < -60) heartX = -60;
+                if (heartX > 60) heartX = 60;
+
+                heartY = 15 + Math.sin(waveTimer + heartX * 0.05) * 8;
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, 400, 400);
+
+                ctx.fillStyle = '#1e293b';
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.rect(bottleX - 20, bottleY - radius - 15, 40, 20);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(bottleX, bottleY, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#ff007f';
+                ctx.beginPath();
+                let renderHeartX = bottleX + heartX;
+                let renderHeartY = bottleY + heartY;
+                ctx.arc(renderHeartX, renderHeartY, 15, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('♥', renderHeartX, renderHeartY + 4);
+            }
+
+            function loop() {
+                update();
+                draw();
+                requestAnimationFrame(loop);
+            }
+
+            function getMousePos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                let pos = getMousePos(e);
+                targetX = pos.x;
+                targetY = pos.y;
             });
-        }
 
-        let heart = {
-            x: 0,
-            y: 10,
-            vX: 0,
-            vY: 0,
-            angle: 0,
-            angleV: 0,
-            size: 26
-        };
-
-        let particles = [];
-
-        function createParticle(x, y, isStar = false) {
-            particles.push({
-                x: x,
-                y: y,
-                vx: (Math.random() - 0.5) * 3,
-                vy: isStar ? (Math.random() - 0.5) * 3 : -Math.random() * 0.6 - 0.2,
-                size: Math.random() * 5 + 3,
-                alpha: 1,
-                life: 1,
-                decay: Math.random() * 0.02 + 0.015,
-                isStar: isStar,
-                rotation: Math.random() * Math.PI,
-                rotSpeed: (Math.random() - 0.5) * 0.1
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                let pos = getMousePos(e);
+                targetX = pos.x;
+                targetY = pos.y;
             });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            canvas.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                let pos = getMousePos(e);
+                targetX = pos.x;
+                targetY = pos.y;
+            }, { passive: true });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                let pos = getMousePos(e);
+                targetX = pos.x;
+                targetY = pos.y;
+            }, { passive: true });
+
+            window.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+
+            loop();
+
+        } catch (err) {
+            errorConsole.style.display = 'block';
+            errorConsole.innerText += `Catch Block Error: ${err.message}\n\n`;
         }
+    </script>
 
-        function drawStar(cx, cy, spikes, outerRadius, innerRadius, fillStyle) {
-            let rot = Math.PI / 2 * 3;
-            let x = cx;
-            let y = cy;
-            let step = Math.PI / spikes;
-
-            ctx.save();
-            ctx.fillStyle = fillStyle;
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(cx, cy - outerRadius);
-            for (let i = 0; i < spikes; i++) {
-                x = cx + Math.cos(rot) * outerRadius;
-                y = cy + Math.sin(rot) * outerRadius;
-                ctx.lineTo(x, y);
-                rot += step;
-                x = cx + Math.cos(rot) * innerRadius;
-                y = cy + Math.sin(rot) * innerRadius;
-                ctx.lineTo(x, y);
-                rot += step;
-            }
-            ctx.lineTo(cx, cy - outerRadius);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        function drawHeartShape(cx, cy, size) {
-            ctx.beginPath();
-            ctx.moveTo(cx, cy + size / 4);
-            ctx.bezierCurveTo(cx, cy - size / 2, cx - size, cy - size / 2, cx - size, cy + size / 4);
-            ctx.bezierCurveTo(cx - size, cy + size * 0.8, cx, cy + size * 1.1, cx, cy + size * 1.3);
-            ctx.bezierCurveTo(cx, cy + size * 1.1, cx + size, cy + size * 0.8, cx + size, cy + size / 4);
-            ctx.bezierCurveTo(cx + size, cy - size / 2, cx, cy - size / 2, cx, cy + size / 4);
-            ctx.closePath();
-        }
-
-        function getWaterHeightAt(localX) {
-            let leftPoint = waterPoints[0];
-            let rightPoint = waterPoints[POINTS_COUNT - 1];
-            if (localX < leftPoint.x) return leftPoint.y;
-            if (localX > rightPoint.x) return rightPoint.y;
-
-            for (let i = 0; i < POINTS_COUNT - 1; i++) {
-                let p1 = waterPoints[i];
-                let p2 = waterPoints[i + 1];
-                if (localX >= p1.x && localX <= p2.x) {
-                    let ratio = (localX - p1.x) / (p2.x - p1.x);
-                    return p1.y + (p2.y - p1.y) * ratio;
-                }
-            }
-            return 10;
-        }
-
-        function updatePhysics() {
-            let prevX = bottle.x;
-            let prevY = bottle.y;
-
-            if (bottle.isDragging) {
-                bottle.x += (bottle.targetX - bottle.x) * 0.25;
-                bottle.y += (bottle.targetY - bottle.y) * 0.25;
-                pointer.speedX = bottle.x - prevX;
-                pointer.speedY = bottle.y - prevY;
-                
-                let speedStr = Math.sqrt(pointer.speedX * pointer.speedX + pointer.speedY * pointer.speedY);
-                if (speedStr > 8) {
-                    bottle.shakeAmount += speedStr * 0.2;
-                    let impactIndex = Math.floor(Math.random() * POINTS_COUNT);
-                    waterPoints[impactIndex].v -= pointer.speedX * 0.5;
-                }
-            } else {
-                let homeX = 200;
-                let homeY = 220 + Math.sin(Date.now() * 0.002) * 6;
-                bottle.x += (homeX - bottle.x) * 0.12;
-                bottle.y += (homeY - bottle.y) * 0.12;
-                pointer.speedX = bottle.x - prevX;
-                pointer.speedY = bottle.y - prevY;
-            }
-
-            bottle.shakeAmount *= 0.94;
-
-            if (bottle.shakeAmount > 12) {
-                targetHue = (targetHue + 2) % 360;
-                if (Math.random() < 0.3) {
-                    let rx = bottle.x + (Math.random() - 0.5) * 132;
-                    let ry = bottle.y + getWaterHeightAt(rx - bottle.x) - 5;
-                    createParticle(rx, ry, true);
-                }
-            }
-            liquidHue += (targetHue - liquidHue) * 0.1;
-
-            for (let i = 0; i < POINTS_COUNT; i++) {
-                let p = waterPoints[i];
-                let force = TENSION * (p.targetY - p.y) - p.v * DAMPING;
-                p.v += force;
-                p.y += p.v;
-
-                p.v -= pointer.speedX * 0.05 * (p.x / 110);
-                p.v += pointer.speedY * 0.03;
-            }
-
-            let leftToRight = new Array(POINTS_COUNT).fill(0);
-            let rightToLeft = new Array(POINTS_COUNT).fill(0);
-
-            for (let step = 0; step < 4; step++) {
-                for (let i = 0; i < POINTS_COUNT; i++) {
-                    if (i > 0) {
-                        leftToRight[i] = SPREAD * (waterPoints[i].y - waterPoints[i - 1].y);
-                        waterPoints[i - 1].v += leftToRight[i];
-                    }
-                    if (i < POINTS_COUNT - 1) {
-                        rightToLeft[i] = SPREAD * (waterPoints[i].y - waterPoints[i + 1].y);
-                        waterPoints[i + 1].v += rightToLeft[i];
-                    }
-                }
-                for (let i = 0; i < POINTS_COUNT; i++) {
-                    if (i > 0) waterPoints[i - 1].y += leftToRight[i];
-                    if (i < POINTS_COUNT - 1) waterPoints[i + 1].y += rightToLeft[i];
-                }
-            }
-
-            heart.vX += (pointer.speedX * -0.3);
-            heart.vX += (0 - heart.x) * 0.05;
-            heart.vX *= 0.85;
-            heart.x += heart.vX;
-            heart.x = Math.max(-77, Math.min(77, heart.x));
-
-            let currentWaterY = getWaterHeightAt(heart.x);
-            heart.y += (currentWaterY - heart.y) * 0.25;
-
-            let deltaX = 8;
-            let hLeft = getWaterHeightAt(heart.x - deltaX);
-            let hRight = getWaterHeightAt(heart.x + deltaX);
-            let targetAngle = Math.atan2(hRight - hLeft, deltaX * 2);
-
-            heart.angleV += (targetAngle - heart.angle) * 0.1;
-            heart.angleV *= 0.75;
-            heart.angle += heart.angleV;
-
-            if (Math.random() < 0.06) {
-                let rAngle = Math.random() * Math.PI;
-                let rDist = Math.random() * 77;
-                let bx = bottle.x + Math.cos(rAngle) * rDist;
-                let by = bottle.y + Math.sin(rAngle) * rDist;
-                if (by > bottle.y + getWaterHeightAt(bx - bottle.x)) {
-                    createParticle(bx, by, false);
-                }
-            }
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= p.decay;
-                p.alpha = Math.max(0, p.life);
-                if (p.isStar) p.rotation += p.rotSpeed;
-
-                let dx = p.x - bottle.x;
-                let dy = p.y - bottle.y;
-                if (dx*dx + dy*dy > 12100) {
-                    p.life -= 0.1;
-                }
-                if (p.life <= 0) particles.splice(i, 1);
-            }
-
-            pointer.lastX = bottle.x;
-            pointer.lastY = bottle.y;
-        }
-
-        function drawGame() {
-            ctx.clearRect(0, 0, 400, 400);
-
-            let glowGrad = ctx.createRadialGradient(bottle.x, bottle.y, 10, bottle.x, bottle.y, 165);
-            glowGrad.addColorStop(0, `hsla(${liquidHue}, 80%, 60%, 0.15)`);
+</body>
+</html>
