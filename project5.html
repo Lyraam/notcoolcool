@@ -69,7 +69,7 @@
 
     <div id="canvasContainer">
         <canvas id="potionCanvas" width="400" height="400"></canvas>
-        <div id="hint">Drag and Shake the Bottle to Mix Magic! ✨</div>
+        <div id="hint">Shake the Potion to Change Gradient Colors! ✨</div>
     </div>
 
     <script>
@@ -77,7 +77,7 @@
         const ctx = canvas.getContext('2d');
 
         const strokeColor = '#1e293b';
-        const strokeWidth = 3.5; 
+        const strokeWidth = 3.5;
         
         let bottle = {
             x: 200,
@@ -91,26 +91,14 @@
 
         let pointer = { speedX: 0, speedY: 0 };
 
-        const SPREAD = 0.15;
-        const DAMPING = 0.12; 
-        const TENSION = 0.015; 
-        const POINTS_COUNT = 17;
-        
-        let waterPoints = [];
-        let baseLiquidY = 15; 
-
-        for (let i = 0; i < POINTS_COUNT; i++) {
-            waterPoints.push({
-                x: ((i / (POINTS_COUNT - 1)) * 220) - 110, 
-                y: baseLiquidY,
-                targetY: baseLiquidY,
-                v: 0
-            });
-        }
+        // Liquid physics states
+        let liquidAngle = 0;
+        let liquidAngleV = 0;
+        let liquidLevelY = 15; // default level offset from bottle center
 
         let heart = {
             x: 0,
-            y: baseLiquidY,
+            y: 15,
             vX: 0,
             vY: 0,
             angle: 0,
@@ -119,11 +107,11 @@
         };
 
         let bubbles = [];
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 10; i++) {
             bubbles.push({
                 angle: Math.random() * Math.PI * 2,
-                dist: Math.random() * 80,
-                size: Math.random() * 4 + 3,
+                dist: Math.random() * 85,
+                size: Math.random() * 4 + 2.5,
                 seed: Math.random() * 100
             });
         }
@@ -139,20 +127,8 @@
         }
 
         function getWaterHeightAt(localX) {
-            let leftPoint = waterPoints[0];
-            let rightPoint = waterPoints[POINTS_COUNT - 1];
-            if (localX < leftPoint.x) return leftPoint.y;
-            if (localX > rightPoint.x) return rightPoint.y;
-
-            for (let i = 0; i < POINTS_COUNT - 1; i++) {
-                let p1 = waterPoints[i];
-                let p2 = waterPoints[i + 1];
-                if (localX >= p1.x && localX <= p2.x) {
-                    let ratio = (localX - p1.x) / (p2.x - p1.x);
-                    return p1.y + (p2.y - p1.y) * ratio;
-                }
-            }
-            return baseLiquidY;
+            // Calculated from the current tilted straight line of the fluid
+            return liquidLevelY + Math.tan(liquidAngle) * localX;
         }
 
         function updatePhysics() {
@@ -160,72 +136,53 @@
             let prevY = bottle.y;
 
             if (bottle.isDragging) {
-                bottle.x += (bottle.targetX - bottle.x) * 0.2;
-                bottle.y += (bottle.targetY - bottle.y) * 0.2;
+                bottle.x += (bottle.targetX - bottle.x) * 0.22;
+                bottle.y += (bottle.targetY - bottle.y) * 0.22;
                 pointer.speedX = bottle.x - prevX;
                 pointer.speedY = bottle.y - prevY;
-                
-                let speedStr = Math.sqrt(pointer.speedX * pointer.speedX + pointer.speedY * pointer.speedY);
-                if (speedStr > 3) {
-                    let impactIndex = Math.floor(Math.random() * POINTS_COUNT);
-                    waterPoints[impactIndex].v -= pointer.speedX * 0.4;
-                    waterPoints[impactIndex].v += pointer.speedY * 0.2;
+
+                let moveDist = Math.sqrt(pointer.speedX * pointer.speedX + pointer.speedY * pointer.speedY);
+                if (moveDist > 2) {
+                    bottle.shakeAmount += moveDist * 0.4;
                 }
             } else {
                 let homeX = 200;
-                let homeY = 210 + Math.sin(Date.now() * 0.002) * 6;
-                bottle.x += (homeX - bottle.x) * 0.1;
-                bottle.y += (homeY - bottle.y) * 0.1;
+                let homeY = 210 + Math.sin(Date.now() * 0.0025) * 5;
+                bottle.x += (homeX - bottle.x) * 0.12;
+                bottle.y += (homeY - bottle.y) * 0.12;
                 pointer.speedX = bottle.x - prevX;
                 pointer.speedY = bottle.y - prevY;
             }
 
-            for (let i = 0; i < POINTS_COUNT; i++) {
-                let p = waterPoints[i];
-                let force = TENSION * (p.targetY - p.y) - p.v * DAMPING;
-                p.v += force;
-                p.y += p.v;
+            // Decay shake amount gradually back to 0
+            bottle.shakeAmount *= 0.95;
+            if (bottle.shakeAmount > 100) bottle.shakeAmount = 100;
 
-                p.v -= pointer.speedX * 0.04 * (p.x / 110);
-                p.v += pointer.speedY * 0.015;
-            }
+            // Physical inertia for the water angle based on acceleration/movement
+            let ax = pointer.speedX * 0.005; // horizontal acceleration impact
+            let gravityRestoration = -liquidAngle * 0.08; // force pulling water back flat
+            
+            liquidAngleV += ax + gravityRestoration;
+            liquidAngleV *= 0.88; // damping to avoid infinite crazy vibration
+            liquidAngle += liquidAngleV;
 
-            let leftToRight = new Array(POINTS_COUNT).fill(0);
-            let rightToLeft = new Array(POINTS_COUNT).fill(0);
+            // Constrain extreme water tilt angles to look realistic
+            if (liquidAngle < -Math.PI / 4) liquidAngle = -Math.PI / 4;
+            if (liquidAngle > Math.PI / 4) liquidAngle = Math.PI / 4;
 
-            for (let step = 0; step < 4; step++) {
-                for (let i = 0; i < POINTS_COUNT; i++) {
-                    if (i > 0) {
-                        leftToRight[i] = SPREAD * (waterPoints[i].y - waterPoints[i - 1].y);
-                        waterPoints[i - 1].v += leftToRight[i];
-                    }
-                    if (i < POINTS_COUNT - 1) {
-                        rightToLeft[i] = SPREAD * (waterPoints[i].y - waterPoints[i + 1].y);
-                        waterPoints[i + 1].v += rightToLeft[i];
-                    }
-                }
-                for (let i = 0; i < POINTS_COUNT; i++) {
-                    if (i > 0) waterPoints[i - 1].y += leftToRight[i];
-                    if (i < POINTS_COUNT - 1) waterPoints[i + 1].y += rightToLeft[i];
-                }
-            }
-
-            heart.vX += (pointer.speedX * -0.2);
+            // Floating Heart Physics (rides the tilted surface)
+            heart.vX += (pointer.speedX * -0.15);
             heart.vX += (0 - heart.x) * 0.04;
-            heart.vX *= 0.85;
+            heart.vX *= 0.82;
             heart.x += heart.vX;
-            heart.x = Math.max(-80, Math.min(80, heart.x));
+            heart.x = Math.max(-75, Math.min(75, heart.x));
 
             let currentWaterY = getWaterHeightAt(heart.x);
-            heart.y += (currentWaterY - heart.y) * 0.25;
+            heart.y += (currentWaterY - heart.y) * 0.3;
 
-            let deltaX = 10;
-            let hLeft = getWaterHeightAt(heart.x - deltaX);
-            let hRight = getWaterHeightAt(heart.x + deltaX);
-            let targetAngle = Math.atan2(hRight - hLeft, deltaX * 2);
-
-            heart.angleV += (targetAngle - heart.angle) * 0.08;
-            heart.angleV *= 0.7;
+            // Align heart rotation perfectly parallel to the water's surface tilt
+            heart.angleV += (liquidAngle - heart.angle) * 0.2;
+            heart.angleV *= 0.6;
             heart.angle += heart.angleV;
         }
 
@@ -237,6 +194,7 @@
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
+            // 1. Draw Cork and Neck
             let neckY = bottle.y - 110 - 8;
             ctx.fillStyle = '#d97706';
             ctx.beginPath();
@@ -250,57 +208,81 @@
             ctx.fill();
             ctx.stroke();
 
-            ctx.fillStyle = '#2dd4bf'; 
-            ctx.beginPath();
-            ctx.moveTo(bottle.x + waterPoints[0].x, bottle.y + waterPoints[0].y);
+            // 2. Setup Shake-Based Gradient Colors
+            // Mix between base teal-green gradient and shaken violet-pink gradient
+            let mixRatio = Math.min(1, bottle.shakeAmount / 45); 
             
-            for (let i = 0; i < POINTS_COUNT - 1; i++) {
-                let p1 = waterPoints[i];
-                let p2 = waterPoints[i + 1];
-                let xc = (p1.x + p2.x) / 2;
-                let yc = (p1.y + p2.y) / 2;
-                ctx.quadraticCurveTo(bottle.x + p1.x, bottle.y + p1.y, bottle.x + xc, bottle.y + yc);
-            }
+            let colorA_Start = [45, 212, 191]; // #2dd4bf (Teal)
+            let colorA_End = [13, 148, 136];   // #0d9488
             
-            let lastP = waterPoints[POINTS_COUNT - 1];
-            ctx.lineTo(bottle.x + lastP.x, bottle.y + lastP.y);
+            let colorB_Start = [192, 132, 252]; // #c084fc (Purple)
+            let colorB_End = [219, 39, 119];   // #db2777 (Pink)
 
+            let r1 = Math.round(colorA_Start[0] + (colorB_Start[0] - colorA_Start[0]) * mixRatio);
+            let g1 = Math.round(colorA_Start[1] + (colorB_Start[1] - colorA_Start[1]) * mixRatio);
+            let b1 = Math.round(colorA_Start[2] + (colorB_Start[2] - colorA_Start[2]) * mixRatio);
+
+            let r2 = Math.round(colorA_End[0] + (colorB_End[0] - colorA_End[0]) * mixRatio);
+            let g2 = Math.round(colorA_End[1] + (colorB_End[1] - colorA_End[1]) * mixRatio);
+            let b2 = Math.round(colorA_End[2] + (colorB_End[2] - colorA_End[2]) * mixRatio);
+
+            let fluidGradient = ctx.createLinearGradient(bottle.x, bottle.y - 60, bottle.x, bottle.y + 110);
+            fluidGradient.addColorStop(0, `rgb(${r1}, ${g1}, ${b1})`);
+            fluidGradient.addColorStop(1, `rgb(${r2}, ${g2}, ${b2})`);
+
+            // 3. Draw Liquid Base (Rendered by sweeping a segment along the bottom circle geometry)
+            ctx.fillStyle = fluidGradient;
+            ctx.beginPath();
+            
+            // Left water intersect point on the container circle
+            let leftX = -110;
+            let leftY = getWaterHeightAt(leftX);
+            ctx.moveTo(bottle.x + leftX, bottle.y + leftY);
+
+            // Right water intersect point
+            let rightX = 110;
+            let rightY = getWaterHeightAt(rightX);
+            ctx.lineTo(bottle.x + rightX, bottle.y + rightY);
+
+            // Sweep the lower circular arc of the bottle to wrap the liquid container shape
             let steps = 40;
             for (let i = 0; i <= steps; i++) {
-                let angle = (i / steps) * Math.PI; 
-                let cx = bottle.x + Math.cos(angle) * 110;
-                let cy = bottle.y + Math.sin(angle) * 110;
-                ctx.lineTo(cx, cy);
+                let ratio = i / steps;
+                let arcAngle = ratio * Math.PI; // Bottom half arc from 0 to Pi
+                let cx = bottle.x + Math.cos(arcAngle) * 110;
+                let cy = bottle.y + Math.sin(arcAngle) * 110;
+                
+                // Only inject arc vertices that sit structurally below the dynamic liquid line
+                let localCX = cx - bottle.x;
+                if (cy > bottle.y + getWaterHeightAt(localCX)) {
+                    ctx.lineTo(cx, cy);
+                }
             }
             ctx.closePath();
             ctx.fill();
 
+            // 4. Draw Thinner Stroke Water Surface Line
             ctx.strokeStyle = strokeColor;
             ctx.lineWidth = strokeWidth;
             ctx.beginPath();
-            ctx.moveTo(bottle.x + waterPoints[0].x, bottle.y + waterPoints[0].y);
-            for (let i = 0; i < POINTS_COUNT - 1; i++) {
-                let p1 = waterPoints[i];
-                let p2 = waterPoints[i + 1];
-                let xc = (p1.x + p2.x) / 2;
-                let yc = (p1.y + p2.y) / 2;
-                ctx.quadraticCurveTo(bottle.x + p1.x, bottle.y + p1.y, bottle.x + xc, bottle.y + yc);
-            }
-            ctx.lineTo(bottle.x + lastP.x, bottle.y + lastP.y);
+            ctx.moveTo(bottle.x + leftX, bottle.y + getWaterHeightAt(leftX));
+            ctx.lineTo(bottle.x + rightX, bottle.y + getWaterHeightAt(rightX));
             ctx.stroke();
 
+            // 5. Render Bubbles inside water
             bubbles.forEach(b => {
-                let offset = Math.sin(Date.now() * 0.002 + b.seed) * 5;
-                let bx = bottle.x + Math.cos(b.angle) * (b.dist + offset);
-                let by = bottle.y + Math.sin(b.angle) * (b.dist + offset);
+                let waveOffset = Math.sin(Date.now() * 0.002 + b.seed) * 4;
+                let bx = bottle.x + Math.cos(b.angle) * (b.dist + waveOffset);
+                let by = bottle.y + Math.sin(b.angle) * (b.dist + waveOffset);
                 
                 let localX = bx - bottle.x;
                 let localY = by - bottle.y;
                 let waterSurfaceY = getWaterHeightAt(localX);
                 let distToCenter = Math.sqrt(localX * localX + localY * localY);
 
-                if (localY > waterSurfaceY + 5 && distToCenter < 102) {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                // Ensure bubbles are below surface and inside glass bounds
+                if (localY > waterSurfaceY + 6 && distToCenter < 102) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
                     ctx.strokeStyle = strokeColor;
                     ctx.lineWidth = 2; 
                     ctx.beginPath();
@@ -310,6 +292,7 @@
                 }
             });
 
+            // 6. Render Floating Heart
             ctx.save();
             ctx.translate(bottle.x + heart.x, bottle.y + heart.y - 4);
             ctx.rotate(heart.angle);
@@ -326,13 +309,14 @@
             ctx.fill();
             ctx.restore();
 
+            // 7. Outer Glass Bottle Ring & Reflection Highlight
             ctx.strokeStyle = strokeColor;
             ctx.lineWidth = strokeWidth;
             ctx.beginPath();
             ctx.arc(bottle.x, bottle.y, 110, 0, Math.PI * 2);
             ctx.stroke();
 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
             ctx.lineWidth = 3.5;
             ctx.beginPath();
             ctx.arc(bottle.x, bottle.y, 98, Math.PI * 1.05, Math.PI * 1.4);
@@ -369,24 +353,3 @@
         function onMove(e) {
             if (!bottle.isDragging) return;
             let pos = getPointerPos(e);
-            bottle.targetX = Math.max(110, Math.min(290, pos.x));
-            bottle.targetY = Math.max(130, Math.min(290, pos.y));
-        }
-
-        function onEnd() {
-            bottle.isDragging = false;
-        }
-
-        window.addEventListener('mousedown', onStart);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onEnd);
-
-        window.addEventListener('touchstart', onStart, { passive: true });
-        window.addEventListener('touchmove', onMove, { passive: true });
-        window.addEventListener('touchend', onEnd);
-
-        gameLoop();
-    </script>
-
-</body>
-</html>
