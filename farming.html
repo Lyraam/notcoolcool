@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cozy Farming Lab</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #141b2d;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Status Dashboard Bar */
+        #gameHeader {
+            width: 100%;
+            max-width: 440px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            background: linear-gradient(to bottom, rgba(20,27,45,1), rgba(20,27,45,0.8));
+        }
+
+        .stat-box {
+            background: #1e293b;
+            border: 3px solid #1e293b;
+            border-radius: 12px;
+            padding: 8px 16px;
+            font-weight: 800;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        #coinText { color: #f59e0b; }
+        #seedText { color: #10b981; }
+
+        /* Main Game Canvas Viewport */
+        #canvasContainer {
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            background-color: #2e3d52;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
+            display: block;
+        }
+
+        /* Bottom Controls Submenu Shop Tool */
+        #gameFooter {
+            width: 100%;
+            max-width: 440px;
+            padding: 16px;
+            background: #1e293b;
+            border-top: 3.5px solid #0f172a;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 14px;
+            background: #2d3748;
+            border: 3px solid #4a5568;
+            border-radius: 14px;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            text-align: center;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+            background: #10b981;
+            border-color: #047857;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="gameHeader">
+        <div class="stat-box" id="coinText">💰 <span id="coinCount">100</span></div>
+        <div class="stat-box" id="seedText">🌱 <span id="seedCount">5</span></div>
+    </div>
+
+    <div id="canvasContainer">
+        <canvas id="farmCanvas"></canvas>
+    </div>
+
+    <div id="gameFooter">
+        <button class="action-btn" onclick="buySeeds()">Buy Seeds (-10 💰)</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('farmCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+
+        let coins = 100;
+        let seeds = 5;
+
+        // Grid Configuration mapping mobile displays
+        const rows = 3;
+        const cols = 2;
+        let plots = [];
+
+        // Initialize plots data structures
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                plots.push({
+                    row: r,
+                    col: c,
+                    status: 'empty', // 'empty', 'planted', 'grown'
+                    progress: 0,     // 0 to 100 percent growth rate tracking
+                    growthSpeed: 0.3 // percentage rate increment per frame frame
+                });
+            }
+        }
+
+        let cellSize = 0;
+        let gridWidth = 0;
+        let gridHeight = 0;
+        let startX = 0;
+        let startY = 0;
+
+        function resizeCanvas() {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            // Compute uniform layout matrix scales fitting device screens
+            cellSize = Math.min((width * 0.8) / cols, (height * 0.8) / rows);
+            gridWidth = cellSize * cols;
+            gridHeight = cellSize * rows;
+            startX = (width - gridWidth) / 2;
+            startY = (height - gridHeight) / 2;
+        }
+
+        function updateGame() {
+            // Process real-time procedural growth states simulation loop stage
+            plots.forEach(plot => {
+                if (plot.status === 'planted') {
+                    plot.progress += plot.growthSpeed;
+                    if (plot.progress >= 100) {
+                        plot.progress = 100;
+                        plot.status = 'grown';
+                    }
+                }
+            });
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw field background terrain tiles context textures
+            plots.forEach(plot => {
+                let px = startX + plot.col * cellSize;
+                let py = startY + plot.row * cellSize;
+                let pad = 10;
+
+                // Draw dirt ground slot patch borders stroke style outline shapes
+                ctx.lineWidth = 3.5;
+                ctx.strokeStyle = '#1e293b';
+                
+                if (plot.status === 'empty') {
+                    ctx.fillStyle = '#654321'; // Brown dry empty ground color
+                } else if (plot.status === 'planted') {
+                    ctx.fillStyle = '#4a2f13'; // Darker wet watered soil color
+                } else if (plot.status === 'grown') {
+                    ctx.fillStyle = '#3d250e'; // Ripe farm patch base
+                }
+
+                ctx.beginPath();
+                ctx.roundRect(px + pad, py + pad, cellSize - pad*2, cellSize - pad*2, 16);
+                ctx.fill();
+                ctx.stroke();
+
+                // Render crops asset visual overlays procedurally based on timelines
+                let cx = px + cellSize / 2;
+                let cy = py + cellSize / 2;
+
+                if (plot.status === 'planted') {
+                    // Seedling tiny sprout graphic drawing step
+                    let size = (plot.progress / 100) * 16 + 4;
+                    ctx.fillStyle = '#10b981';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy + 10, size, Math.PI, 0);
+                    ctx.fill();
+                    
+                    // Draw Progress bar percentage tracker ring wrapper
+                    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                    ctx.fillRect(px + pad + 15, py + cellSize - pad - 18, cellSize - pad*2 - 30, 6);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fillRect(px + pad + 15, py + cellSize - pad - 18, (cellSize - pad*2 - 30) * (plot.progress / 100), 6);
+
+                } else if (plot.status === 'grown') {
+                    // Fully matured golden glowing flower crop asset
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy - 5, 20, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Stem
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = '#059669';
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy - 5);
+                    ctx.lineTo(cx, cy + 25);
+                    ctx.stroke();
+
+                    // Golden petals pulse ring shine layer effect
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy - 5, 24 + Math.sin(Date.now() * 0.005) * 2, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function gameLoop() {
+            updateGame();
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Handle Touch and click interactivity behaviors routing mechanisms
+        function handleTap(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            let clickX = clientX - rect.left;
+            let clickY = clientY - rect.top;
+
+            plots.forEach(plot => {
+                let px = startX + plot.col * cellSize;
+                let py = startY + plot.row * cellSize;
+                let pad = 10;
+
+                // Hit bounds calculation box validation stage check
+                if (clickX >= px + pad && clickX <= px + cellSize - pad &&
+                    clickY >= py + pad && clickY <= py + cellSize - pad) {
+                    
+                    // Interaction execution matrix tree branches
+                    if (plot.status === 'empty' && seeds > 0) {
+                        plot.status = 'planted';
+                        plot.progress = 0;
+                        seeds--;
+                        document.getElementById('seedCount').innerText = seeds;
+                    } else if (plot.status === 'grown') {
+                        plot.status = 'empty';
+                        coins += 25; // reward profit on harvest transaction loop cycle
+                        document.getElementById('coinCount').innerText = coins;
+                    }
+                }
+            });
+        }
+
+        function buySeeds() {
+            if (coins >= 10) {
+                coins -= 10;
+                seeds += 1;
+                document.getElementById('coinCount').innerText = coins;
+                document.getElementById('seedCount').innerText = seeds;
+            }
+        }
+
+        // Event listener hooks targeting portable touchscreen hardware parameters
+        window.addEventListener('touchstart', (e) => {
+            if(e.touches[0]) handleTap(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        window.addEventListener('mousedown', (e) => {
+            handleTap(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Bootstrap Core
+        resizeCanvas();
+        gameLoop();
+    </script>
+</body>
+</html>
