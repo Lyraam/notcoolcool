@@ -95,6 +95,19 @@
         .menu-item:active .item-arrow {
             transform: translateX(4px);
         }
+        
+        /* Highlight style for the newest gradient potion addition */
+        .menu-item.highlight-potion {
+            border-color: rgba(45, 212, 191, 0.25);
+            background: rgba(45, 212, 191, 0.02);
+        }
+        .menu-item.highlight-potion:active {
+            background: rgba(45, 212, 191, 0.08);
+            border-color: rgba(45, 212, 191, 0.5);
+        }
+        .menu-item.highlight-potion .item-arrow {
+            color: #2dd4bf;
+        }
     </style>
 </head>
 <body>
@@ -124,6 +137,22 @@
                 <div class="item-info">
                     <div class="item-title">Project 3: Tearable Cloth</div>
                     <div class="item-desc">2D Verlet integration ragdoll fabric physics</div>
+                </div>
+                <div class="item-arrow">&rarr;</div>
+            </a>
+
+            <a href="game.html" class="menu-item">
+                <div class="item-info">
+                    <div class="item-title">Project 4: Interactive Game</div>
+                    <div class="item-desc">Canvas interactive gameplay physics mechanics</div>
+                </div>
+                <div class="item-arrow">&rarr;</div>
+            </a>
+
+            <a href="project5.html" class="menu-item highlight-potion">
+                <div class="item-info">
+                    <div class="item-title" style="color: #2dd4bf;">Magic Potion Lab</div>
+                    <div class="item-desc">Inertia physics surface & shake-to-gradient fluid</div>
                 </div>
                 <div class="item-arrow">&rarr;</div>
             </a>
