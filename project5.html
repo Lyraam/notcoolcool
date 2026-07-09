@@ -177,4 +177,77 @@
 
             // Calculate precise liquid intersecting edge coordinates
             let tanVal = Math.tan(liquidAngle);
-            let leftY = baseLevelY +
+            let leftY = baseLevelY + tanVal * (-110);
+            let rightY = baseLevelY + tanVal * (110);
+
+            // Redraw dynamic water polygon shape mapping the circle interior bounds
+            liquidPolygon.setAttribute('points', `90,${leftY} 310,${rightY} 310,340 90,340`);
+            liquidSurface.setAttribute('x1', '90');
+            liquidSurface.setAttribute('y1', leftY);
+            liquidSurface.setAttribute('x2', '310');
+            liquidSurface.setAttribute('y2', rightY);
+
+            // Move the floating heart group inside SVG space
+            heartGroup.setAttribute('transform', `translate(${heart.targetX}, ${heart.y - 4}) rotate(${heart.angle})`);
+
+            // Process dynamic gradient shifts based on shaking magnitude
+            let mix = Math.min(1, bottle.shakeAmount / 50);
+            let r1 = Math.floor(45 + (192 - 45) * mix);
+            let g1 = Math.floor(212 + (132 - 212) * mix);
+            let b1 = Math.floor(191 + (252 - 191) * mix);
+
+            let r2 = Math.floor(13 + (219 - 13) * mix);
+            let g2 = Math.floor(148 + (39 - 148) * mix);
+            let b2 = Math.floor(136 + (119 - 136) * mix);
+
+            gradStop1.setAttribute('stop-color', `rgb(${r1},${g1},${b1})`);
+            gradStop2.setAttribute('stop-color', `rgb(${r2},${g2},${b2})`);
+
+            requestAnimationFrame(updatePhysics);
+        }
+
+        function getPointerPos(e) {
+            const rect = container.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function onStart(e) {
+            let pos = getPointerPos(e);
+            let dx = pos.x - (bottle.x);
+            let dy = pos.y - (bottle.y);
+            if (dx*dx + dy*dy < 16000) {
+                bottle.isDragging = true;
+                bottle.targetX = pos.x;
+                bottle.targetY = pos.y;
+            }
+        }
+
+        function onMove(e) {
+            if (!bottle.isDragging) return;
+            let pos = getPointerPos(e);
+            bottle.targetX = Math.max(110, Math.min(290, pos.x));
+            bottle.targetY = Math.max(130, Math.min(290, pos.y));
+        }
+
+        function onEnd() {
+            bottle.isDragging = false;
+        }
+
+        container.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+
+        container.addEventListener('touchstart', onStart, { passive: true });
+        window.addEventListener('touchmove', onMove, { passive: true });
+        window.addEventListener('touchend', onEnd);
+
+        updatePhysics();
+    </script>
+
+</body>
+</html>
