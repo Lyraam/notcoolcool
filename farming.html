@@ -1,322 +1,294 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cozy Farming Lab</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #fce7f3; /* Cute pastel pink background */
-            background-image: radial-gradient(#fbcfe8 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            color: #1e293b;
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Top HUD Header Dashboard */
-        #gameHeader {
-            width: 100%;
-            max-width: 440px;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 10;
-        }
-
-        .stats-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .stat-box {
-            background: #ffffff;
-            border: 3.5px solid #1e293b;
-            border-radius: 14px;
-            padding: 6px 14px;
-            font-weight: 800;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 0 #1e293b;
-        }
-
-        /* Floating Shop Button placed safely at top-right */
-        .shop-btn {
-            background: #ffb703;
-            border: 3.5px solid #1e293b;
-            border-radius: 14px;
-            padding: 6px 12px;
-            font-weight: 800;
-            font-size: 14px;
-            color: #1e293b;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #1e293b;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .shop-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 0 0 #1e293b;
-        }
-
-        /* Main Game Canvas Viewport Frame */
-        #canvasContainer {
-            position: relative;
-            width: 100%;
-            max-width: 440px;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-        }
-
-        canvas {
-            background-color: #ffedd5; /* Warm light sand color for the farm ground */
-            border: 4px solid #1e293b;
-            border-radius: 24px;
-            box-shadow: 0 8px 0 #1e293b;
-            display: block;
-        }
-    </style>
-</head>
-<body>
-
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"><title>Cozy Farm</title><style>
+* { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: "Comic Sans MS", sans-serif; }
+body { margin: 0; background: #fff1f2; background-image: radial-gradient(#ffe4e6 2px, transparent 2px); background-size: 24px 24px; color: #475569; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; touch-action: none; }
+#gameHeader { width: 100%; max-width: 440px; padding: 16px 16px 4px; display: flex; flex-direction: column; gap: 10px; z-index: 10; touch-action: none; }
+.top-row { display: flex; justify-content: space-between; align-items: center; }
+.stats-group { display: flex; gap: 8px; }
+.stat-box { background: #fff; border: 4px solid #ffb6c1; border-radius: 20px; padding: 8px 14px; font-weight: 900; font-size: 14px; display: flex; align-items: center; gap: 4px; box-shadow: 0 5px 0 #ffc0cb; }
+.ui-btn { background: #ffde59; border: 4px solid #f4a261; border-radius: 20px; padding: 8px 14px; font-weight: 900; font-size: 14px; color: #e76f51; cursor: pointer; box-shadow: 0 5px 0 #f4a261; z-index: 20; }
+.ui-btn:active { transform: scale(0.9) translateY(4px); box-shadow: 0 1px 0 #f4a261; }
+.level-container { background: #fff; border: 4px solid #bde0fe; border-radius: 18px; padding: 6px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 5px 0 #bde0fe; }
+#levelTag { font-weight: 900; font-size: 14px; color: #a2d2ff; display: flex; align-items: center; gap: 4px; }
+.exp-bar-bg { flex: 1; height: 16px; background: #f1f5f9; border: 3px solid #cbd5e1; border-radius: 10px; overflow: hidden; padding: 1px; }
+#expBarFill { width: 0%; height: 100%; background: linear-gradient(90deg, #ffafcc, #ffc8dd); border-radius: 8px; }
+#canvasContainer { width: 100%; max-width: 420px; flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px; position: relative; touch-action: none; }
+canvas { width: 100%; aspect-ratio: 4 / 5; background-color: #fefae0; border: 5px solid #e9c46a; border-radius: 32px; box-shadow: 0 10px 0 #e9c46a; display: block; }
+#cropSelector { width: 100%; max-width: 440px; padding: 8px 16px 20px; display: flex; justify-content: space-between; gap: 8px; z-index: 10; overflow-x: auto; touch-action: pan-x; }
+.crop-btn { flex: 1; min-width: 62px; background: #fff; border: 4px solid #e2e8f0; border-radius: 20px; padding: 8px 2px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; box-shadow: 0 5px 0 #e2e8f0; }
+.crop-btn.active { background: #ffcad4; border-color: #ffb5a7; box-shadow: 0 2px 0 #ffb5a7; transform: translateY(3px); }
+.crop-btn.locked { background: #f1f5f9; border-color: #cbd5e1; box-shadow: 0 5px 0 #cbd5e1; opacity: 0.4; }
+.crop-icon { font-size: 22px; }
+.crop-name { font-size: 11px; font-weight: 900; color: #64748b; }
+.modal { display: none; position: absolute; top: 2%; left: 4%; width: 92%; height: 96%; background: #fff; border: 5px solid #ffb6c1; border-radius: 28px; z-index: 500; box-shadow: 0 12px 0 #ffb6c1; padding: 16px; flex-direction: column; touch-action: auto; }
+.modal-title { font-weight: 900; font-size: 20px; text-align: center; margin-bottom: 12px; color: #ff85a1; border-bottom: 4px dashed #ffb6c1; padding-bottom: 6px; flex-shrink: 0; }
+.modal-scroll-area { flex: 1; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; touch-action: pan-y !important; padding-right: 6px; margin-bottom: 10px; }
+.book-scroll-content { padding-bottom: 30px; }
+.book-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px; border-bottom: 2px dashed #f1f5f9; font-weight: 800; font-size: 13px; }
+#dressingRoomPage { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #ffe5ec; z-index: 600; padding: 12px; flex-direction: row; gap: 10px; touch-action: auto; }
+.preview-side { flex: 4; background: #fff; border: 4px solid #ffcad4; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: 0 6px 0 #ffcad4; height: 100%; touch-action: none; padding: 12px 6px; }
+.closet-side { flex: 6; background: #fff; border: 4px solid #bde0fe; border-radius: 24px; display: flex; flex-direction: column; box-shadow: 0 6px 0 #bde0fe; overflow: hidden; height: 100%; }
+.closet-tabs { display: flex; background: #f1f5f9; border-bottom: 3px solid #cbd5e1; flex-shrink: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x !important; }
+.tab-btn { padding: 12px 10px; text-align: center; font-size: 12px; font-weight: 900; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; flex: 1; }
+.tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; background: #fff; }
+.closet-content { flex: 1; padding: 10px; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; touch-action: pan-y !important; }
+.item-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding-bottom: 32px; }
+.cos-card { border: 3px solid #e2e8f0; border-radius: 16px; padding: 10px 6px; text-align: center; cursor: pointer; font-weight: 800; background: #fff; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.cos-card.active { border-color: #ff85a1; background: #fff0f3; }
+.cos-card.locked { opacity: 0.4; background: #f1f5f9; }
+.hint-box { width: 94%; background: #fff0f3; border: 2px dashed #ffbad2; border-radius: 12px; padding: 6px; text-align: center; font-size: 11px; font-weight: 800; color: #ff4d6d; word-break: break-word; }
+</style></head><body>
     <div id="gameHeader">
-        <div class="stats-group">
-            <div class="stat-box" style="color: #d97706;">💰 <span id="coinCount">100</span></div>
-            <div class="stat-box" style="color: #059669;">🌱 <span id="seedCount">5</span></div>
+        <div class="top-row">
+            <div class="stats-group"><div class="stat-box" id="coinBox" style="color:#e76f51;">💰 <span id="coinCount">100</span></div><div class="stat-box" id="seedBox" style="color:#2a9d8f;">🌱 <span id="seedCount">5</span></div></div>
+            <div style="display:flex; gap:6px;"><button class="ui-btn" style="background:#bde0fe; border-color:#a2d2ff; color:#4f46e5; box-shadow:0 5px 0 #a2d2ff;" onclick="toggleModal('menuModal')">📖 Book</button><button class="ui-btn" style="background:#ffcad4; border-color:#ffb5a7; color:#ff477e; box-shadow:0 5px 0 #ffb5a7;" onclick="openDressingRoom()">👗 Room</button><button class="ui-btn" onclick="buySeeds()">🛒 Seed (-10💰)</button></div>
         </div>
-        <button class="shop-btn" onclick="buySeeds()">🛒 Buy Seed (-10💰)</button>
+        <div class="level-container"><div id="levelTag"><span id="outfitIcon">🧑‍🌾</span> LV.<span id="levelNum">1</span></div><div class="exp-bar-bg"><div id="expBarFill"></div></div></div>
     </div>
-
-    <div id="canvasContainer">
-        <canvas id="farmCanvas"></canvas>
+    <div id="canvasContainer"><canvas id="farmCanvas"> </canvas>
+        <div id="menuModal" class="modal">
+            <div class="modal-title">Achievements & Seeds</div>
+            <div class="modal-scroll-area">
+                <div class="book-scroll-content">
+                    <div style="font-weight:900; color:#ff7096; margin-bottom:6px; text-align:center; font-size:14px;">Achievements Progress</div>
+                    <div id="achList" style="margin-bottom:14px;"></div>
+                    <div style="font-weight:900; color:#4f46e5; margin-bottom:6px; text-align:center; font-size:14px;">Crop Guide</div>
+                    <div id="bookList"></div>
+                </div>
+            </div>
+            <button class="ui-btn" style="width:100%; background:#ff6b6b; border-color:#ee5253; color:#fff; box-shadow:0 5px 0 #ee5253; flex-shrink:0;" onclick="toggleModal('menuModal')">Close 🐾</button>
+        </div>
     </div>
-
+    <div id="cropSelector">
+        <div class="crop-btn active" id="btn-carrot" onclick="selectCrop('carrot')"><span class="crop-icon">🥕</span><span class="crop-name">Carrot</span></div>
+        <div class="crop-btn locked" id="btn-berry" onclick="selectCrop('berry')"><span class="crop-icon">🍓</span><span class="crop-name">Berry</span></div>
+        <div class="crop-btn locked" id="btn-shroom" onclick="selectCrop('shroom')"><span class="crop-icon">🍄</span><span class="crop-name">Shroom</span></div>
+        <div class="crop-btn locked" id="btn-chili" onclick="selectCrop('chili')"><span class="crop-icon">🌶️</span><span class="crop-name">Chili</span></div>
+        <div class="crop-btn locked" id="btn-crystal" onclick="selectCrop('crystal')"><span class="crop-icon">🔮</span><span class="crop-name">Crystal</span></div>
+        <div class="crop-btn locked" id="btn-starfruit" onclick="selectCrop('starfruit')"><span class="crop-icon">🌟</span><span class="crop-name">Starfruit</span></div>
+    </div>
+    <div id="dressingRoomPage">
+        <div class="preview-side">
+            <div style="font-weight:900; color:#ff7096; font-size:13px; text-align:center; width:100%;">Preview</div>
+            <canvas id="previewCanvas" width="120" height="150" style="background:transparent; display:block; margin:0 auto;"></canvas>
+            <div class="hint-box" id="cosHintBox">Select an item</div>
+        </div>
+        <div class="closet-side">
+            <div class="closet-tabs">
+                <div class="tab-btn active" id="tab-hats" onclick="switchTab('hats')">Hats</div>
+                <div class="tab-btn" id="tab-body" onclick="switchTab('body')">Body</div>
+                <div class="tab-btn" id="tab-bottoms" onclick="switchTab('bottoms')">Bottoms</div>
+                <div class="tab-btn" id="tab-acc" onclick="switchTab('acc')">Accessories</div>
+            </div>
+            <div class="closet-content" id="closetGridContainer"></div>
+            <button class="ui-btn" style="margin:8px; background:#4caf50; border-color:#388e3c; color:#fff; box-shadow:0 4px 0 #388e3c; flex-shrink:0;" onclick="closeDressingRoom()">Save & Exit 🐾</button>
+        </div>
+    </div>
     <script>
-        const canvas = document.getElementById('farmCanvas');
-        const ctx = canvas.getContext('2d');
-        const container = document.getElementById('canvasContainer');
-
-        let coins = 100;
-        let seeds = 5;
-
-        // --- ART ASSETS DIRECTORY LOADING CODE ---
-        // To use your own drawings, place your image files in the same folder as this HTML file!
-        // If an image file is missing, the game will automatically draw fallback shapes so it never breaks.
+        const canvas = document.getElementById('farmCanvas'), ctx = canvas.getContext('2d');
+        const pCanvas = document.getElementById('previewCanvas'), pCtx = pCanvas.getContext('2d');
+        let coins = 100, seeds = 5, currentLevel = 1, currentExp = 0, expNeeded = 100, selectedCropType = 'carrot';
+        let eqItems = { hats: 'none', body: 'b1', bottoms: 'none', acc: 'none' };
+        let stats = { carrotPlanted: 0, totalCoinsEarned: 0, shinyHarvested: 0 };
+        const achievements = {
+            c5: { title: "Carrot Lover 🥕", desc: "Plant 5 Carrots", target: 5, type: "carrotPlanted", unlocked: false, rwd: "Strawberry Hat & Angel Halo" },
+            gold: { title: "Rich Farmer 💰", desc: "Earn 500 Coins", target: 500, type: "totalCoinsEarned", unlocked: false, rwd: "Royal Crown & Fairy Wings" },
+            shiny: { title: "Lucky Star 🌟", desc: "Harvest 1 Shiny Crop", target: 1, type: "shinyHarvested", unlocked: false, rwd: "Magical Cat Ears" }
+        };
+        const cropTypes = {
+            carrot: { id: 1, name: 'Carrot', icon: '🥕', shinyIcon: '👑🥕', revenue: 25, expReward: 20, growthSpeed: 0.6, unlockLv: 1, color: '#f97316', shinyChance: 0.05, feat: 'Fast & Stable' },
+            berry: { id: 2, name: 'Berry', icon: '🍓', shinyIcon: '💎🍓', revenue: 55, expReward: 40, growthSpeed: 0.35, unlockLv: 2, color: '#f43f5e', shinyChance: 0.05, feat: 'High Profit' },
+            shroom: { id: 3, name: 'Shroom', icon: '🍄', shinyIcon: '🔮🍄', revenue: 80, expReward: 65, growthSpeed: 0.2, unlockLv: 2, color: '#ec4899', shinyChance: 0.05, feat: 'Mutates Speed' },
+            chili: { id: 4, name: 'Chili', icon: '🌶️', shinyIcon: '🔥🌶️', revenue: 120, expReward: 90, growthSpeed: 0.15, unlockLv: 3, color: '#ef4444', shinyChance: 0.05, feat: 'Explosive Spark' },
+            crystal: { id: 5, name: 'Crystal', icon: '🔮', shinyIcon: '🌌🔮', revenue: 220, expReward: 160, growthSpeed: 0.08, unlockLv: 3, color: '#a855f7', shinyChance: 0.08, feat: 'Heavy Exp Gain' },
+            starfruit: { id: 6, name: 'Starfruit', icon: '🌟', shinyIcon: '🪐🌟', revenue: 450, expReward: 300, growthSpeed: 0.05, unlockLv: 4, color: '#eab308', shinyChance: 0.20, feat: 'High Shiny Rate' }
+        };
+        const cosRegistry = {
+            hats: {
+                none: { id: 'none', icon: '❌', title: 'No Hat', ach: null },
+                h1: { id: 'h1', icon: '👒', title: 'Straw Hat', lv: 1, img: new Image() },
+                h2: { id: 'h2', icon: '🍓', title: 'Berry Cap', ach: 'c5', img: new Image() },
+                h3: { id: 'h3', icon: '👑', title: 'Royal Crown', ach: 'gold', img: new Image() }
+            },
+            body: {
+                b1: { id: 'b1', icon: '🧑‍🌾', title: 'Rookie Suit', lv: 1, img: new Image() },
+                b2: { id: 'b2', icon: '🤠', title: 'Cowboy Vest', lv: 2, img: new Image() },
+                b3: { id: 'b3', icon: '🥷', title: 'Ninja Garb', lv: 3, img: new Image() },
+                b4: { id: 'b4', icon: '🧙', title: 'Mage Robe', lv: 4, img: new Image() }
+            },
+            bottoms: {
+                none: { id: 'none', icon: '❌', title: 'No Bottom', ach: null },
+                bt1: { id: 'bt1', icon: '👖', title: 'Farm Jeans', lv: 1, img: new Image() },
+                bt2: { id: 'bt2', icon: '🩳', title: 'Cozy Shorts', lv: 2, img: new Image() },
+                bt3: { id: 'bt3', icon: '👗', title: 'Cute Skirt', lv: 3, img: new Image() }
+            },
+            acc: {
+                none: { id: 'none', icon: '❌', title: 'No Acc', ach: null },
+                a1: { id: 'a1', icon: '😇', title: 'Angel Halo', ach: 'c5', img: new Image() },
+                a2: { id: 'a2', icon: '🦋', title: 'Fairy Wings', ach: 'gold', img: new Image() },
+                a3: { id: 'a3', icon: '🐱', title: 'Cat Ears', ach: 'shiny', img: new Image() }
+            }
+        };
+        cosRegistry.body.b1.img.src = 'p1.png'; cosRegistry.body.b2.img.src = 'p2.png'; cosRegistry.body.b3.img.src = 'p3.png'; cosRegistry.body.b4.img.src = 'p4.png';
+        cosRegistry.hats.h1.img.src = 'h1.png'; cosRegistry.hats.h2.img.src = 'h2.png'; cosRegistry.hats.h3.img.src = 'h3.png';
+        cosRegistry.bottoms.bt1.img.src = 'bt1.png'; cosRegistry.bottoms.bt2.img.src = 'bt2.png'; cosRegistry.bottoms.bt3.img.src = 'bt3.png';
+        cosRegistry.acc.a1.img.src = 'a1.png'; cosRegistry.acc.a2.img.src = 'a2.png'; cosRegistry.acc.a3.img.src = 'a3.png';
         
-        const imgSoil = new Image();
-        imgSoil.src = 'dirt.png';       // Your drawing for empty land tile texture
-
-        const imgSeedling = new Image();
-        imgSeedling.src = 'sprout.png'; // Your drawing for young growing sprout asset
-
-        const imgGrown = new Image();
-        imgGrown.src = 'berry.png';     // Your drawing for fully matured cute crop asset
-
-        // Grid parameters configurations
-        const rows = 3;
-        const cols = 2;
-        let plots = [];
-
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                plots.push({
-                    row: r, col: c,
-                    status: 'empty',
-                    progress: 0,
-                    growthSpeed: 0.4
-                });
+        const imgSoil = new Image(); imgSoil.src = 'd.png';
+        const cropImages = {}; Object.keys(cropTypes).forEach(k => { let id = cropTypes[k].id; cropImages[k] = { sprout: new Image(), grown: new Image() }; cropImages[k].sprout.src = `s${id}.png`; cropImages[k].grown.src = `c${id}.png`; });
+        const rows = 3, cols = 2; let plots = []; for (let r = 0; r < rows; r++) { for (let c = 0; c < cols; c++) plots.push({ row: r, col: c, status: 'empty', cropType: null, progress: 0, sprinkleTriggered: false, isShiny: false }); }
+        let cellSize = 0, gridWidth = 0, gridHeight = 0, startX = 0, startY = 0, levelUpFlashTimer = 0, particles = [], floatingTexts = [];
+        let player = { x: 150, y: 200, size: 32, speed: 3.2, faceDir: 1 };
+        let joystick = { active: false, startX: 0, startY: 0, curX: 0, curY: 0, maxRadius: 42, vx: 0, vy: 0, touchId: null };
+        let currentTab = 'hats';
+        function resizeCanvas() { const rect = canvas.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height; cellSize = Math.min((rect.width * 0.85) / cols, (rect.height * 0.85) / rows); gridWidth = cellSize * cols; gridHeight = cellSize * rows; startX = (rect.width - gridWidth) / 2; startY = (rect.height - gridHeight) / 2; }
+        function spawnParticles(x, y, color, count, type='star') {
+            for (let i = 0; i < count; i++) {
+                let a = Math.random() * Math.PI * 2, s = 1 + Math.random() * 3;
+                particles.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1.2, size: 6 + Math.random()*5, alpha: 1, decay: 0.02, color: color, type: type, rot: Math.random()*Math.PI, rotSpd: (Math.random()-0.5)*0.1 });
             }
         }
-
-        let cellSize = 0;
-        let gridWidth = 0;
-        let gridHeight = 0;
-        let startX = 0;
-        let startY = 0;
-
-        function resizeCanvas() {
-            const width = container.clientWidth - 20;
-            const height = container.clientHeight - 20;
-            canvas.width = width;
-            canvas.height = height;
-
-            cellSize = Math.min((width * 0.85) / cols, (height * 0.85) / rows);
-            gridWidth = cellSize * cols;
-            gridHeight = cellSize * rows;
-            startX = (width - gridWidth) / 2;
-            startY = (height - gridHeight) / 2;
-        }
-
+        function spawnFloatingText(x, y, text, color) { floatingTexts.push({ x: x, y: y, text: text, color: color, alpha: 1, scale: 0.5, vy: -1.6, life: 50 }); }
         function updateGame() {
-            plots.forEach(plot => {
-                if (plot.status === 'planted') {
-                    plot.progress += plot.growthSpeed;
-                    if (plot.progress >= 100) {
-                        plot.progress = 100;
-                        plot.status = 'grown';
+            if (joystick.active) { player.x += joystick.vx * player.speed; player.y += joystick.vy * player.speed; if (joystick.vx !== 0) player.faceDir = joystick.vx > 0 ? 1 : -1; if (player.x < 15) player.x = 15; if (player.x > canvas.width - 15) player.x = canvas.width - 15; if (player.y < 15) player.y = 15; if (player.y > canvas.height - 15) player.y = canvas.height - 15; }
+            plots.forEach(p => { if (p.status === 'planted' && p.cropType) { p.progress += cropTypes[p.cropType].growthSpeed; if (p.progress >= 100) { p.progress = 100; p.status = 'grown'; if (!p.sprinkleTriggered) { let cx = startX + p.col * cellSize + cellSize / 2, cy = startY + p.row * cellSize + cellSize / 2; spawnParticles(cx, cy, p.isShiny ? '#ffd166' : cropTypes[p.cropType].color, 14, 'star'); p.sprinkleTriggered = true; } } } });
+            particles.forEach((p, idx) => { p.x += p.vx; p.y += p.vy; p.alpha -= p.decay; if (p.alpha <= 0) particles.splice(idx, 1); });
+            floatingTexts.forEach((ft, idx) => { ft.y += ft.vy; ft.life--; if (ft.alpha <= 0) floatingTexts.splice(idx, 1); });
+            if (levelUpFlashTimer > 0) levelUpFlashTimer--;
+        }
+        function drawCharacterLayer(cContext, cx, cy, size, flip) {
+            cContext.save(); cContext.translate(cx, cy); cContext.scale(flip, 1);
+            let bObj = cosRegistry.body[eqItems.body];
+            if (bObj && bObj.img.complete && bObj.img.naturalWidth !== 0) cContext.drawImage(bObj.img, -size, -size, size*2, size*2);
+            else { cContext.font = `${size}px sans-serif`; cContext.textAlign = 'center'; cContext.textBaseline = 'middle'; cContext.fillText(bObj?bObj.icon:'🧑‍🌾', 0, 0); }
+            ['hats','bottoms','acc'].forEach(cat => {
+                let item = cosRegistry[cat][eqItems[cat]];
+                if (item && item.id !== 'none') {
+                    if (item.img && item.img.complete && item.img.naturalWidth !== 0) {
+                        let yOff = (cat === 'hats') ? -size * 0.7 : 0;
+                        cContext.drawImage(item.img, -size, -size + yOff, size*2, size*2);
                     }
+                    else { cContext.font = `${size*0.5}px sans-serif`; cContext.textAlign = 'center'; cContext.textBaseline = 'middle'; cContext.fillText(item.icon, 0, cat==='hats'?-size*0.6:cat==='acc'?-size*0.2:size*0.4); }
                 }
             });
+            cContext.restore();
         }
-
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             plots.forEach(plot => {
-                let px = startX + plot.col * cellSize;
-                let py = startY + plot.row * cellSize;
-                let pad = 12;
-                let w = cellSize - pad * 2;
-                let h = cellSize - pad * 2;
-
-                // 1. Draw Ground Base Layouts
-                ctx.lineWidth = 3.5;
-                ctx.strokeStyle = '#1e293b';
-                
-                if (plot.status === 'empty') ctx.fillStyle = '#b45309';
-                else if (plot.status === 'planted') ctx.fillStyle = '#78350f';
-                else if (plot.status === 'grown') ctx.fillStyle = '#451a03';
-
-                ctx.beginPath();
-                ctx.roundRect(px + pad, py + pad, w, h, 20);
-                ctx.fill();
-                ctx.stroke();
-
-                // Check if your own custom soil asset image is successfully loaded
-                if (imgSoil.complete && imgSoil.naturalWidth !== 0) {
-                    ctx.drawImage(imgSoil, px + pad, py + pad, w, h);
-                }
-
-                // Center position helpers for drawings rendering inside slots
-                let cx = px + cellSize / 2;
-                let cy = py + cellSize / 2;
-
-                // 2. Render Crop Art Asset States
-                if (plot.status === 'planted') {
-                    let currentScale = 0.4 + (plot.progress / 100) * 0.4; // smooth expansion scale
-                    let assetW = w * currentScale;
-                    let assetH = h * currentScale;
-
-                    if (imgSeedling.complete && imgSeedling.naturalWidth !== 0) {
-                        ctx.drawImage(imgSeedling, cx - assetW/2, cy - assetH/2, assetW, assetH);
-                    } else {
-                        // Cute default backup sprout fallback shape
-                        ctx.fillStyle = '#10b981';
-                        ctx.beginPath();
-                        ctx.arc(cx, cy + 5, 12 * currentScale, Math.PI, 0);
-                        ctx.fill();
-                    }
-                    
-                    // Cute Progress loading bar styling design
-                    let barW = w * 0.7;
-                    let barH = 8;
-                    ctx.fillStyle = '#1e293b';
-                    ctx.beginPath();
-                    ctx.roundRect(cx - barW/2, py + cellSize - pad - 16, barW, barH, 4);
-                    ctx.fill();
-
-                    ctx.fillStyle = '#f43f5e'; // lovely pink progress fill color
-                    ctx.beginPath();
-                    ctx.roundRect(cx - barW/2, py + cellSize - pad - 16, barW * (plot.progress / 100), barH, 4);
-                    ctx.fill();
-
-                } else if (plot.status === 'grown') {
-                    let pulse = Math.sin(Date.now() * 0.006) * 3;
-                    let assetW = w * 0.85 + pulse;
-                    let assetH = h * 0.85 + pulse;
-
-                    if (imgGrown.complete && imgGrown.naturalWidth !== 0) {
-                        ctx.drawImage(imgGrown, cx - assetW/2, cy - assetH/2, assetW, assetH);
-                    } else {
-                        // Cute default backup fully grown flower icon
-                        ctx.fillStyle = '#ec4899';
-                        ctx.beginPath();
-                        ctx.arc(cx, cy, 18, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.fillStyle = '#fde047';
-                        ctx.beginPath();
-                        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
+                let px = startX + plot.col * cellSize, py = startY + plot.row * cellSize, pad = 12, w = cellSize - pad * 2, h = cellSize - pad * 2, cx = px + cellSize / 2, cy = py + cellSize / 2;
+                let isNear = Math.hypot(cx - player.x, cy - player.y) < cellSize * 1.15; ctx.lineWidth = isNear ? 5.5 : 4; ctx.strokeStyle = isNear ? '#ff85a1' : '#f4a261';
+                if (plot.status === 'empty') ctx.fillStyle = '#dda15e'; else if (plot.status === 'planted') ctx.fillStyle = '#bc6c25'; else if (plot.status === 'grown') ctx.fillStyle = '#606c38';
+                ctx.beginPath(); ctx.roundRect(px + pad, py + pad, w, h, 24); ctx.fill(); ctx.stroke(); if (imgSoil.complete && imgSoil.naturalWidth !== 0) ctx.drawImage(imgSoil, px + pad, py + pad, w, h);
+                if (plot.status === 'planted' && plot.cropType) {
+                    let imgS = cropImages[plot.cropType].sprout;
+                    if (imgS.complete && imgS.naturalWidth !== 0) { ctx.drawImage(imgS, cx - w*0.3, cy - h*0.3, w*0.6, h*0.6); }
+                    let bw = w * 0.72, bh = 10; ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); ctx.roundRect(cx - bw/2, py + cellSize - pad - 16, bw, bh, 5); ctx.fill();
+                    ctx.fillStyle = cropTypes[plot.cropType].color; ctx.beginPath(); ctx.roundRect(cx - bw/2, py + cellSize - pad - 16, bw * (plot.progress / 100), bh, 5); ctx.fill();
+                } else if (plot.status === 'grown' && plot.cropType) {
+                    let imgG = cropImages[plot.cropType].grown;
+                    if (imgG.complete && imgG.naturalWidth !== 0) { ctx.drawImage(imgG, cx - w*0.4, cy - h*0.4, w*0.8, h*0.8); }
+                    else { ctx.font = `bold ${cellSize * 0.4}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(plot.isShiny ? cropTypes[plot.cropType].shinyIcon : cropTypes[plot.cropType].icon, cx, cy); }
                 }
             });
+            drawCharacterLayer(ctx, player.x, player.y, player.size, player.faceDir);
+            particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.translate(p.x, p.y); ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
+            floatingTexts.forEach(ft => { ctx.save(); ctx.globalAlpha = ft.alpha; ctx.font = '900 18px system-ui'; ctx.fillStyle = ft.color; ctx.fillText(ft.text, ft.x, ft.y); ctx.restore(); });
+            ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255, 182, 193, 0.6)"; ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; ctx.beginPath(); ctx.arc(60, canvas.height - 60, joystick.maxRadius, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            let jx = 60, jy = canvas.height - 60; if (joystick.active) { jx = joystick.curX; jy = joystick.curY; }
+            ctx.fillStyle = "#ff85a1"; ctx.beginPath(); ctx.arc(jx, jy, 18, 0, Math.PI*2); ctx.fill();
         }
-
-        function gameLoop() {
-            updateGame();
-            drawGame();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function handleTap(clientX, clientY) {
-            const rect = canvas.getBoundingClientRect();
-            let clickX = clientX - rect.left;
-            let clickY = clientY - rect.top;
-
-            plots.forEach(plot => {
-                let px = startX + plot.col * cellSize;
-                let py = startY + plot.row * cellSize;
-                let pad = 12;
-
-                if (clickX >= px + pad && clickX <= px + cellSize - pad &&
-                    clickY >= py + pad && clickY <= py + cellSize - pad) {
-                    
-                    if (plot.status === 'empty' && seeds > 0) {
-                        plot.status = 'planted';
-                        plot.progress = 0;
-                        seeds--;
-                        document.getElementById('seedCount').innerText = seeds;
-                    } else if (plot.status === 'grown') {
-                        plot.status = 'empty';
-                        coins += 25;
-                        document.getElementById('coinCount').innerText = coins;
+        function gameLoop() { updateGame(); drawGame(); requestAnimationFrame(gameLoop); }
+        function handleGridInteraction(clickX, clickY) {
+            if(document.getElementById('menuModal').style.display === 'flex' || document.getElementById('dressingRoomPage').style.display === 'flex') return;
+            for (let i = 0; i < plots.length; i++) {
+                let p = plots[i], px = startX + p.col * cellSize, py = startY + p.row * cellSize, pad = 12;
+                if (clickX >= px + pad && clickX <= px + cellSize - pad && clickY >= py + pad && clickY <= py + cellSize - pad) {
+                    let cx = px + cellSize / 2, cy = py + cellSize / 2; if (Math.hypot(cx - player.x, cy - player.y) > cellSize * 1.15) { spawnFloatingText(player.x, player.y - 25, "Too Far! ✨", "#ff7096"); return; }
+                    if (p.status === 'grown') {
+                        let d = cropTypes[p.cropType], m = p.isShiny ? 3 : 1, fc = d.revenue * m, fe = d.expReward * m;
+                        if (p.isShiny) stats.shinyHarvested++; spawnParticles(cx, cy - 10, '#ffd166', 15); spawnFloatingText(cx, cy - 15, `+💰${fc}`, '#f4a261');
+                        coins += fc; stats.totalCoinsEarned += fc; addExperience(fe); p.status = 'empty'; p.cropType = null; p.isShiny = false; checkAchievements(); updateHUD(); return;
+                    } else if (p.status === 'empty' && seeds > 0) {
+                        if (currentLevel >= cropTypes[selectedCropType].unlockLv) {
+                            p.status = 'planted'; p.cropType = selectedCropType; p.progress = 0; p.isShiny = Math.random() < cropTypes[selectedCropType].shinyChance;
+                            if (selectedCropType === 'carrot') stats.carrotPlanted++; seeds--; checkAchievements(); updateHUD(); return;
+                        }
                     }
                 }
-            });
-        }
-
-        function buySeeds() {
-            if (coins >= 10) {
-                coins -= 10;
-                seeds += 1;
-                document.getElementById('coinCount').innerText = coins;
-                document.getElementById('seedCount').innerText = seeds;
             }
         }
+        function addExperience(a) { currentExp += a; if (currentExp >= expNeeded) { currentExp -= expNeeded; currentLevel++; levelUpFlashTimer = 45; checkUnlocks(); } updateHUD(); }
+        function checkUnlocks() { Object.keys(cropTypes).forEach(k => { let b = document.getElementById(`btn-${k}`); if (b) { if (currentLevel >= cropTypes[k].unlockLv) b.classList.remove('locked'); else b.classList.add('locked'); } }); rebuildBook(); }
+        function checkAchievements() { Object.keys(achievements).forEach(k => { let a = achievements[k]; if (!a.unlocked && stats[a.type] >= a.target) { a.unlocked = true; spawnFloatingText(player.x, player.y - 45, `🏆 Unlocked: ${a.title}!`, '#4f46e5'); } }); rebuildBook(); }
+        function selectCrop(t) { if (currentLevel >= cropTypes[t].unlockLv) { selectedCropType = t; Object.keys(cropTypes).forEach(k => { let b = document.getElementById(`btn-${k}`); if (b) b.classList.remove('active'); }); document.getElementById(`btn-${t}`).classList.add('active'); } }
+        function buySeeds() { if (coins >= 10) { coins -= 10; seeds += 1; updateHUD(); } }
+        function updateHUD() { document.getElementById('coinCount').innerText = coins; document.getElementById('seedCount').innerText = seeds; document.getElementById('levelNum').innerText = currentLevel; document.getElementById('expBarFill').style.width = `${(currentExp / expNeeded) * 100}%`; let c = cosRegistry.body[eqItems.body]; document.getElementById('outfitIcon').innerText = c?c.icon:'🧑‍🌾'; }
+        function rebuildBook() {
+            let h = ""; Object.keys(cropTypes).forEach(k => { let l = currentLevel < cropTypes[k].unlockLv; h += `<div class="book-row"><span>${l ? '🔒' : cropTypes[k].icon} <b>${cropTypes[k].name}</b></span><span style="font-size:11px; color:#94a3b8">${l ? 'Unlock LV.' + cropTypes[k].unlockLv : cropTypes[k].feat}</span></div>`; }); document.getElementById('bookList').innerHTML = h;
+            let ah = ""; Object.keys(achievements).forEach(k => { let a = achievements[k], cur = Math.min(a.target, stats[a.type]); ah += `<div class="book-row" style="flex-direction:column; align-items:flex-start; gap:2px;"><div>${a.unlocked?'✅':'🏆'} <b>${a.title}</b> (${cur}/${a.target})</div><div style="font-size:11px; color:#ff7096;">🎁 ${a.rwd}</div></div>`; }); document.getElementById('achList').innerHTML = ah;
+        }
+        function openDressingRoom() { document.getElementById('dressingRoomPage').style.display = 'flex'; document.getElementById('cosHintBox').innerText = "Select an item"; switchTab(currentTab); drawPreview(); }
+        function closeDressingRoom() { document.getElementById('dressingRoomPage').style.display = 'none'; updateHUD(); }
+        function drawPreview() { pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height); drawCharacterLayer(pCtx, pCanvas.width/2, pCanvas.height/2 + 10, 42, 1); }
+        function switchTab(t) { currentTab = t; document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${t}`).classList.add('active'); rebuildClosetGrid(); }
+        function rebuildClosetGrid() {
+            let h = `<div class="item-grid">`; Object.keys(cosRegistry[currentTab]).forEach(k => {
+                let item = cosRegistry[currentTab][k];
+                let isL = (item.lv && currentLevel < item.lv) || (item.ach && !achievements[item.ach].unlocked);
+                h += `<div class="cos-card ${isL?'locked':''} ${eqItems[currentTab]===item.id?'active':''}" onclick="clickItem('${currentTab}','${item.id}',${isL})"><div style="font-size:22px;">${isL?'🔒':item.icon}</div><div style="font-size:10px;">${item.title}</div></div>`;
+            }); h += `</div>`; document.getElementById('closetGridContainer').innerHTML = h;
+        }
+        function clickItem(cat, id, isLocked) {
+            let item = cosRegistry[cat][id]; let msg = "Default Item";
+            if (item.lv) msg = `Unlock: Reach Level ${item.lv}`;
+            else if (item.ach) { let a = achievements[item.ach]; msg = `Unlock: Complete [${a.title}]`; }
+            document.getElementById('cosHintBox').innerText = msg;
+            if (isLocked) return; eqItems[cat] = id; rebuildClosetGrid(); drawPreview();
+        }
+        function toggleModal(id) { let e = document.getElementById(id); e.style.display = (e.style.display === 'flex' || e.style.display === 'block') ? 'none' : 'flex'; if(e.style.display==='flex') rebuildBook(); }
 
+        let touchStartX = 0, touchStartY = 0;
         window.addEventListener('touchstart', (e) => {
-            if(e.touches[0]) handleTap(e.touches[0].clientX, e.touches[0].clientY);
+            if(document.getElementById('menuModal').style.display === 'flex' || document.getElementById('dressingRoomPage').style.display === 'flex') return;
+            const rect = canvas.getBoundingClientRect();
+            let t = e.changedTouches[0];
+            let tx = (t.clientX - rect.left) * (canvas.width / rect.width);
+            let ty = (t.clientY - rect.top) * (canvas.height / rect.height);
+            touchStartX = t.clientX; touchStartY = t.clientY;
+            let jSize = 65 * (rect.width / canvas.width);
+            let isInsideJ = Math.hypot(t.clientX - (rect.left + 60 * (rect.width/canvas.width)), t.clientY - (rect.top + (canvas.height - 60) * (rect.height/canvas.height))) < jSize;
+            if (isInsideJ && !joystick.active) {
+                joystick.active = true; joystick.touchId = t.identifier; joystick.startX = 60; joystick.startY = canvas.height - 60; joystick.curX = tx; joystick.curY = ty;
+                e.preventDefault();
+            }
+        }, { passive: false });
+        window.addEventListener('touchmove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            for (let i = 0; i < e.touches.length; i++) {
+                let t = e.touches[i]; if (t.identifier === joystick.touchId) {
+                    let mx = (t.clientX - rect.left) * (canvas.width / rect.width), my = (t.clientY - rect.top) * (canvas.height / rect.height);
+                    let dx = mx - joystick.startX, dy = my - joystick.startY, dist = Math.hypot(dx, dy);
+                    if (dist > joystick.maxRadius) { mx = joystick.startX + (dx / dist) * joystick.maxRadius; my = joystick.startY + (dy / dist) * joystick.maxRadius; }
+                    joystick.curX = mx; joystick.curY = my; joystick.vx = dx / joystick.maxRadius; joystick.vy = dy / joystick.maxRadius;
+                }
+            }
         }, { passive: true });
-
-        window.addEventListener('mousedown', (e) => {
-            handleTap(e.clientX, e.clientY);
+        window.addEventListener('touchend', (e) => {
+            if (joystick.active) {
+                let t = e.changedTouches[0]; if (t.identifier === joystick.touchId) { joystick.active = false; joystick.vx = 0; joystick.vy = 0; joystick.touchId = null; }
+            } else {
+                if(document.getElementById('menuModal').style.display === 'flex' || document.getElementById('dressingRoomPage').style.display === 'flex') return;
+                let t = e.changedTouches[0]; const rect = canvas.getBoundingClientRect();
+                if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) {
+                    if (Math.hypot(t.clientX - touchStartX, t.clientY - touchStartY) < 15) {
+                        let tx = (t.clientX - rect.left) * (canvas.width / rect.width);
+                        let ty = (t.clientY - rect.top) * (canvas.height / rect.height);
+                        handleGridInteraction(tx, ty);
+                    }
+                }
+            }
         });
-
-        window.addEventListener('resize', resizeCanvas);
-
-        resizeCanvas();
-        gameLoop();
-    </script>
-</body>
-</html>
+        window.addEventListener('mousedown', (e) => { if ('ontouchstart' in window) return; const rect = canvas.getBoundingClientRect(); handleGridInteraction((e.clientX - rect.left) * (canvas.width / rect.width), (e.clientY - rect.top) * (canvas.height / rect.height)); });
+        setTimeout(() => { resizeCanvas(); rebuildBook(); }, 120); window.addEventListener('resize', resizeCanvas);
+        checkUnlocks(); updateHUD(); gameLoop();
+    </script></body></html>
